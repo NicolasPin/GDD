@@ -5611,14 +5611,6 @@
 							"length": "18,2"
 						}
 					]
-				},
-				{
-					"_type": "ERDEntity",
-					"_id": "AAAAAAGPXhGA/p+4sHQ=",
-					"_parent": {
-						"$ref": "AAAAAAGPNbPHNmSaAcc="
-					},
-					"name": "Entity1"
 				}
 			]
 		}
