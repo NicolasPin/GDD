@@ -18,7 +18,7 @@ create table [MASTER_COOKS].[Sucursal] (
 	sucu_direccion varchar(50),
 	sucu_localidad_id varchar(50),
     sucu_provincia_id varchar(60),
-    foreign key (sucu_localidad_id, sucu_provincia_id) references [MASTER_COOKS].[Localidad](loca_nombre, loca_provincia_id),
+    foreign key (sucu_localidad_id, sucu_provincia_id) references [MASTER_COOKS].[Localidad](loca_nombre, loca_provincia_id)
 )
 
 create table [MASTER_COOKS].[Supermercado] (
@@ -60,8 +60,8 @@ create table [MASTER_COOKS].[Descuento_Medio_Pago] (
 create table [MASTER_COOKS].[Medio_De_Pago] (
     medi_codigo decimal(2,0) primary key,
 	medi_descuento_mp decimal(10,0),
-	foreign key (medi_descuento_mp) references [MASTER_COOKS].[Descuento_Medio_Pago](desc_codigo),
-    medi_descripcion varchar(30)
+    medi_descripcion varchar(30),
+	foreign key (medi_descuento_mp) references [MASTER_COOKS].[Descuento_Medio_Pago](desc_codigo)
 )
 
 create table [MASTER_COOKS].[Tipo_Caja] (
@@ -225,11 +225,19 @@ create table [MASTER_COOKS].[Promocion_X_Ticket] (
     foreign key (promx_tick_numero, promx_tick_tipo, promx_tick_sucursal_id) references [MASTER_COOKS].[Ticket](tick_numero, tick_tipo, tick_sucursal_id)
 )
 
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+
 --Insertar los campos de la tabla maestra a las tablas creadas
 
+--Crea el numero para cada sucursal
+CREATE SEQUENCE [MASTER_COOKS].[seq_sucursal_numero]
+START WITH 1
+INCREMENT BY 1;
+
 --INSERT para la tabla Sucursal
-INSERT INTO [MASTER_COOKS].[Sucursal] (sucu_nombre, sucu_direccion, sucu_localidad_id, sucu_provincia_id)
+INSERT INTO [MASTER_COOKS].[Sucursal] (sucu_numero, sucu_nombre, sucu_direccion, sucu_localidad_id, sucu_provincia_id)
 SELECT DISTINCT 
+    NEXT VALUE FOR [MASTER_COOKS].[seq_sucursal_numero], -- Genera un numero de sucursal unico y autoincremental
     CAST(SUCURSAL_NOMBRE AS VARCHAR(30)), 
     CAST(SUCURSAL_DIRECCION AS VARCHAR(50)), 
     CAST(SUCURSAL_LOCALIDAD AS VARCHAR(50)), 
@@ -247,7 +255,7 @@ SELECT DISTINCT
     CAST(SUPER_DOMICILIO AS VARCHAR(50)), 
     CAST(SUPER_FECHA_INI_ACTIVIDAD AS DATE), 
     CAST(SUPER_CONDICION_FISCAL AS VARCHAR(50)), 
-    CAST(SUCURSAL_NUMERO AS DECIMAL(6,0))
+    CAST(SUCURSAL_NUMERO AS DECIMAL(6,0)) --TODO: revisar, no existe referencia a SUCURSAL_NUMERO en la tabla maestra (Es un dato creado por nosotros)
 FROM gd_esquema.Maestra
 WHERE SUPER_CUIT IS NOT NULL AND SUCU_NUMERO IS NOT NULL;
 
@@ -261,7 +269,7 @@ INCREMENT BY 1;
 INSERT INTO [MASTER_COOKS].[Empleado] 
 (empl_legajo, empl_nombre, empl_apellido, empl_fecha_ingreso, empl_dni, empl_telefono, empl_mail, empl_fecha_nacimiento, empl_sucursal_id)
 SELECT 
-    NEXT VALUE FOR [MASTER_COOKS].[seq_empleado_legajo], -- Genera un legajo único y autoincremental
+    NEXT VALUE FOR [MASTER_COOKS].[seq_empleado_legajo], -- Genera un legajo unico y autoincremental
     CAST(EMPLEADO_NOMBRE AS VARCHAR(30)), 
     CAST(EMPLEADO_APELLIDO AS VARCHAR(30)), 
     CAST(EMPLEADO_FECHA_INGRESO AS DATE), 
@@ -269,19 +277,29 @@ SELECT
     CAST(EMPLEADO_TELEFONO AS VARCHAR(20)), 
     CAST(EMPLEADO_MAIL AS VARCHAR(50)), 
     CAST(EMPLEADO_FECHA_NACIMIENTO AS DATE), 
-    CAST(SUCU_NUMERO AS DECIMAL(6,0))
+    CAST(SUCU_NUMERO AS DECIMAL(6,0)) --TODO: revisar, no existe referencia a SUCURSAL_NUMERO en la tabla maestra (Es un dato creado por nosotros)
 FROM [gd_esquema].[Maestra]
 WHERE EMPLEADO_NOMBRE IS NOT NULL AND EMPLEADO_APELLIDO IS NOT NULL AND SUCU_NUMERO IS NOT NULL;
 
 -- INSERT para la tabla Cliente
-INSERT INTO [MASTER_COOKS].[Cliente] (clie_documento, clie_apellido, clie_nombre, clie_fecha_registro, clie_telefono, clie_mail, clie_fecha_nacimiento, clie_domicilio, clie_localidad)
-SELECT CLIENTE_DOCUMENTO, CLIENTE_APELLIDO, CLIENTE_NOMBRE, CLIENTE_FECHA_REGISTRO, CLIENTE_TELEFONO, CLIENTE_MAIL, CLIENTE_FECHA_NACIMIENTO, CLIENTE_DOMICILIO, CLIENTE_LOCALIDAD
+INSERT INTO [MASTER_COOKS].[Cliente] (clie_documento, clie_apellido, clie_nombre, clie_fecha_registro, clie_telefono, clie_mail, clie_fecha_nacimiento, clie_domicilio, clie_localidad_id, clie_provincia_id)
+SELECT 
+    CAST(CLIENTE_DOCUMENTO AS DECIMAL(8,0)),
+    CAST(CLIENTE_APELLIDO AS VARCHAR(30)),
+    CAST(CLIENTE_NOMBRE AS VARCHAR(30)),
+    CAST(CLIENTE_FECHA_REGISTRO AS DATE),
+    CAST(CLIENTE_TELEFONO AS VARCHAR(20)),
+    CAST(CLIENTE_MAIL AS VARCHAR(50)),
+    CAST(CLIENTE_FECHA_NACIMIENTO AS DATE),
+    CAST(CLIENTE_DOMICILIO AS VARCHAR(50)),
+    CAST(CLIENTE_LOCALIDAD AS VARCHAR(50)),
+    CAST(CLIENTE_PROVINCIA AS VARCHAR(60))
 FROM [gd_esquema].[Maestra]
-WHERE clie_documento IS NOT NULL and clie_apellido IS NOT NULL and clie_localidad IS NOT NULL and clie_provincia IS NOT NULL;   
+WHERE CLIENTE_DOCUMENTO IS NOT NULL and CLIENTE_APELLIDO IS NOT NULL and CLIENTE_LOCALIDAD IS NOT NULL and CLIENTE_PROVINCIA IS NOT NULL;
 
 -- INSERT para la tabla Producto
 INSERT INTO [MASTER_COOKS].[Producto] (prod_categoria, prod_subcategoria, prod_nombre, prod_precio_unitario, prod_marca)
-SELECT  PRODUCTO_CATEGORIA, PRODUCTO_SUB_CATEGORIA, PRODUCTO_NOMBRE, PRODUCTO_PRECIO, PRODUCTO_MARCA --PRODUCTO_PROMOCION    no esta en tabla maestra
+SELECT PRODUCTO_CATEGORIA, PRODUCTO_SUB_CATEGORIA, PRODUCTO_NOMBRE, PRODUCTO_PRECIO, PRODUCTO_MARCA --PRODUCTO_PROMOCION no esta en tabla maestra
 FROM [gd_esquema].[Maestra]
 WHERE prod_codigo IS NOT NULL and prod_categoria IS NOT NULL and prod_sub_categoria IS NOT NULL and prod_marca IS NOT NULL;
 
