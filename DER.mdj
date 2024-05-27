@@ -1585,7 +1585,7 @@
 									"font": "Arial;13;1",
 									"left": 224,
 									"top": 1157,
-									"width": 249.63525390625,
+									"width": 242.4052734375,
 									"height": 13,
 									"text": "Descuento_Medio_Pago"
 								},
@@ -1611,7 +1611,7 @@
 											"font": "Arial;13;0",
 											"left": 229,
 											"top": 1180,
-											"width": 239.63525390625,
+											"width": 232.4052734375,
 											"height": 13
 										},
 										{
@@ -1626,7 +1626,7 @@
 											"font": "Arial;13;0",
 											"left": 229,
 											"top": 1195,
-											"width": 239.63525390625,
+											"width": 232.4052734375,
 											"height": 13
 										},
 										{
@@ -1641,7 +1641,7 @@
 											"font": "Arial;13;0",
 											"left": 229,
 											"top": 1210,
-											"width": 239.63525390625,
+											"width": 232.4052734375,
 											"height": 13
 										},
 										{
@@ -1656,7 +1656,7 @@
 											"font": "Arial;13;0",
 											"left": 229,
 											"top": 1225,
-											"width": 239.63525390625,
+											"width": 232.4052734375,
 											"height": 13
 										},
 										{
@@ -1671,7 +1671,7 @@
 											"font": "Arial;13;0",
 											"left": 229,
 											"top": 1240,
-											"width": 239.63525390625,
+											"width": 232.4052734375,
 											"height": 13
 										},
 										{
@@ -1686,21 +1686,21 @@
 											"font": "Arial;13;0",
 											"left": 229,
 											"top": 1255,
-											"width": 239.63525390625,
+											"width": 232.4052734375,
 											"height": 13
 										}
 									],
 									"font": "Arial;13;0",
 									"left": 224,
 									"top": 1175,
-									"width": 249.63525390625,
+									"width": 242.4052734375,
 									"height": 98
 								}
 							],
 							"font": "Arial;13;0",
 							"left": 224,
 							"top": 1152,
-							"width": 249.63525390625,
+							"width": 242.4052734375,
 							"height": 121,
 							"autoResize": true,
 							"nameLabel": {
@@ -6979,7 +6979,7 @@
 							},
 							"name": "desc_codigo",
 							"type": "decimal",
-							"length": "10,0",
+							"length": "5,0",
 							"primaryKey": true
 						},
 						{
