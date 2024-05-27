@@ -1168,21 +1168,6 @@
 										},
 										{
 											"_type": "ERDColumnView",
-											"_id": "AAAAAAGPNdiYZGZUTik=",
-											"_parent": {
-												"$ref": "AAAAAAGPNdgXs2YzIdQ="
-											},
-											"model": {
-												"$ref": "AAAAAAGPNdiYYGZRHSE="
-											},
-											"font": "Arial;13;0",
-											"left": 557,
-											"top": 1148,
-											"width": 278.60986328125,
-											"height": 13
-										},
-										{
-											"_type": "ERDColumnView",
 											"_id": "AAAAAAGPNdjRfWZiNig=",
 											"_parent": {
 												"$ref": "AAAAAAGPNdgXs2YzIdQ="
@@ -1192,7 +1177,7 @@
 											},
 											"font": "Arial;13;0",
 											"left": 557,
-											"top": 1163,
+											"top": 1148,
 											"width": 278.60986328125,
 											"height": 13
 										},
@@ -1207,7 +1192,7 @@
 											},
 											"font": "Arial;13;0",
 											"left": 557,
-											"top": 1178,
+											"top": 1163,
 											"width": 278.60986328125,
 											"height": 13
 										},
@@ -1222,7 +1207,7 @@
 											},
 											"font": "Arial;13;0",
 											"left": 557,
-											"top": 1193,
+											"top": 1178,
 											"width": 278.60986328125,
 											"height": 13
 										},
@@ -1237,7 +1222,7 @@
 											},
 											"font": "Arial;13;0",
 											"left": 557,
-											"top": 1208,
+											"top": 1193,
 											"width": 278.60986328125,
 											"height": 13
 										}
@@ -1246,14 +1231,14 @@
 									"left": 552,
 									"top": 1023,
 									"width": 288.60986328125,
-									"height": 203
+									"height": 188
 								}
 							],
 							"font": "Arial;13;0",
 							"left": 552,
 							"top": 1000,
 							"width": 288.60986328125,
-							"height": 226,
+							"height": 211,
 							"autoResize": true,
 							"nameLabel": {
 								"$ref": "AAAAAAGPNdgXs2Yyg0Q="
@@ -2276,7 +2261,7 @@
 									"font": "Arial;13;1",
 									"left": 224,
 									"top": 1037,
-									"width": 259.7470703125,
+									"width": 252.51708984375,
 									"height": 13,
 									"text": "Medio_De_Pago"
 								},
@@ -2302,7 +2287,7 @@
 											"font": "Arial;13;0",
 											"left": 229,
 											"top": 1060,
-											"width": 249.7470703125,
+											"width": 242.51708984375,
 											"height": 13
 										},
 										{
@@ -2317,7 +2302,7 @@
 											"font": "Arial;13;0",
 											"left": 229,
 											"top": 1075,
-											"width": 249.7470703125,
+											"width": 242.51708984375,
 											"height": 13
 										},
 										{
@@ -2332,21 +2317,21 @@
 											"font": "Arial;13;0",
 											"left": 229,
 											"top": 1090,
-											"width": 249.7470703125,
+											"width": 242.51708984375,
 											"height": 13
 										}
 									],
 									"font": "Arial;13;0",
 									"left": 224,
 									"top": 1055,
-									"width": 259.7470703125,
+									"width": 252.51708984375,
 									"height": 53
 								}
 							],
 							"font": "Arial;13;0",
 							"left": 224,
 							"top": 1032,
-							"width": 259.7470703125,
+							"width": 252.51708984375,
 							"height": 76,
 							"autoResize": true,
 							"nameLabel": {
@@ -2457,7 +2442,7 @@
 									},
 									"visible": false,
 									"font": "Arial;13;0",
-									"left": 518,
+									"left": 514,
 									"top": 1054,
 									"height": 13,
 									"alpha": 1.5707963267948966,
@@ -2474,7 +2459,7 @@
 										"$ref": "AAAAAAGPStXyl4PJjZM="
 									},
 									"font": "Arial;13;0",
-									"left": 509,
+									"left": 502,
 									"top": 1054,
 									"height": 13,
 									"autoResize": true,
@@ -2511,7 +2496,7 @@
 								"$ref": "AAAAAAGPP/dse/2V938="
 							},
 							"lineStyle": 2,
-							"points": "484:1075;552:1075",
+							"points": "477:1075;552:1075",
 							"nameLabel": {
 								"$ref": "AAAAAAGPStXyl4PKHOE="
 							},
@@ -6704,16 +6689,6 @@
 						},
 						{
 							"_type": "ERDColumn",
-							"_id": "AAAAAAGPNdiYYGZRHSE=",
-							"_parent": {
-								"$ref": "AAAAAAGPNdgXsmYve6k="
-							},
-							"name": "pago_detalle",
-							"type": "varchar",
-							"length": "50"
-						},
-						{
-							"_type": "ERDColumn",
 							"_id": "AAAAAAGPNdjReWZfauU=",
 							"_parent": {
 								"$ref": "AAAAAAGPNdgXsmYve6k="
@@ -7547,9 +7522,9 @@
 							"_parent": {
 								"$ref": "AAAAAAGPP/dse/2TUg8="
 							},
-							"name": "medi_codigo",
-							"type": "decimal",
-							"length": "2,0",
+							"name": "medi_nombre",
+							"type": "varchar",
+							"length": "30",
 							"primaryKey": true
 						},
 						{
@@ -7560,7 +7535,7 @@
 							},
 							"name": "medi_descuento_mp",
 							"type": "decimal",
-							"length": "10,0",
+							"length": "5,0",
 							"foreignKey": true
 						},
 						{
@@ -7571,7 +7546,7 @@
 							},
 							"name": "medi_descripcion",
 							"type": "varchar",
-							"length": "30"
+							"length": "50"
 						}
 					]
 				},

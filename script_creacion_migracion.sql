@@ -1,4 +1,4 @@
-create schema [MASTER_COOKS]
+ï»¿create schema [MASTER_COOKS]
 go 
 
 create table [MASTER_COOKS].[Provincia] (
@@ -31,7 +31,7 @@ create table [MASTER_COOKS].[Supermercado] (
 	supe_sucursal_id decimal(6,0) null, 
     supe_localidad_id varchar(50) null,
     supe_provincia_id varchar(60) null,
-    foreign key (supe_localidad_id, supe_provincia_id) references [MASTER_COOKS].[Localidad](loca_nombre, loca_provincia_id)
+    foreign key (supe_localidad_id, supe_provincia_id) references [MASTER_COOKS].[Localidad](loca_nombre, loca_provincia_id),
 	foreign key (supe_sucursal_id) references [MASTER_COOKS].[Sucursal](sucu_numero)
 )
 
@@ -60,9 +60,9 @@ create table [MASTER_COOKS].[Descuento_Medio_Pago](
 )
 
 create table [MASTER_COOKS].[Medio_De_Pago] (
-    medi_nombre decimal(2,0) primary key,
-	medi_descuento_mp decimal(10,0) null,
-    medi_descripcion varchar(30) null,
+    medi_nombre varchar(30) primary key,
+	medi_descuento_mp decimal(5,0) null,
+    medi_descripcion varchar(50) null,
     foreign key (medi_descuento_mp) references [MASTER_COOKS].[Descuento_Medio_Pago](desc_codigo)
 )
 
@@ -117,15 +117,14 @@ create table [MASTER_COOKS].[Ticket] (
 
 create table [MASTER_COOKS].[Pago] (
     pago_numero decimal(18,0) primary key,
-    pago_medio_de_pago_id decimal(2,0) null,
-    pago_descuento_x_medio_id decimal(10,0) null,
+    pago_medio_de_pago_id varchar(30) null,
+    pago_descuento_x_medio_id decimal(5,0) null,
 	pago_clie_documento decimal (8,0) null,
 	pago_clie_apellido varchar(30) null,
 	pago_ticket_numero decimal(18,0) null,
 	pago_ticket_tipo char(1) null,
 	pago_ticket_sucursal decimal(6,0) null,
     pago_fecha date null,
-    pago_detalle varchar(50) null,
     pago_importe decimal(18,2) null,
     pago_nro_tarjeta decimal(18,0) null,
 	pago_monto_descontado decimal(10,2) null,
@@ -257,7 +256,7 @@ SELECT DISTINCT
 FROM [gd_esquema].[Maestra]
 --WHERE SUPER_CUIT IS NOT NULL AND SUCU_NUMERO IS NOT NULL;
 
---Genera un legajo único y autoincremental
+--Genera un legajo ï¿½nico y autoincremental
 CREATE SEQUENCE [MASTER_COOKS].[seq_empleado_legajo]
 START WITH 1
 INCREMENT BY 1;
@@ -269,7 +268,7 @@ SELECT DISTINCT
     --CAST((NEXT VALUE FOR [MASTER_COOKS].[seq_empleado_legajo]) AS DECIMAL(6,0)), fijarse si no es otro insert into aparte
     CAST(EMPLEADO_NOMBRE AS VARCHAR(30)), 
     CAST(EMPLEADO_APELLIDO AS VARCHAR(30)), 
-    CAST(EMPLEADO_FECHA_INGRESO AS DATE), 
+    CAST(EMPLEADO_FECHA_REGISTRO AS DATE), 
     CAST(EMPLEADO_DNI AS DECIMAL(8,0)), 
     CAST(EMPLEADO_TELEFONO AS VARCHAR(20)), 
     CAST(EMPLEADO_MAIL AS VARCHAR(50)), 
@@ -346,22 +345,36 @@ SELECT DISTINCT
     CAST(DESCUENTO_DESCRIPCION AS VARCHAR(50)), 
     CAST(DESCUENTO_FECHA_INICIO AS DATE), 
     CAST(DESCUENTO_FECHA_FIN AS DATE), 
-    CAST(DESCUENTO_PORCENTAJE AS DECIMAL(3,2)), 
+    CAST(DESCUENTO_PORCENTAJE_DESC AS DECIMAL(3,2)), 
     CAST(DESCUENTO_TOPE AS DECIMAL(8,2))
 FROM [gd_esquema].[Maestra]
 --WHERE DESCUENTO_CODIGO IS NOT NULL;
 
 -- INSERT para la tabla Medio_De_Pago
 INSERT INTO [MASTER_COOKS].[Medio_De_Pago](medi_nombre, medi_descuento_mp, medi_descripcion)
-SELECT DISTINCT PAGO_TIPO_MEDIO_PAGO, , PAGO_MEDIO_PAGO
+SELECT DISTINCT 
+	CAST(PAGO_TIPO_MEDIO_PAGO AS VARCHAR(30)), 
+	CAST(DESCUENTO_CODIGO AS DECIMAL(5,0)), 
+	CAST(PAGO_MEDIO_PAGO AS VARCHAR(50))
 FROM [gd_esquema].[Maestra]
 --WHERE MEDIO_CODIGO IS NOT NULL;
 
 -- INSERT para la tabla Pago
-INSERT INTO [MASTER_COOKS].[Pago] (pago_numero, pago_ticket, pago_medio_de_pago, pago_descuento_x_medio, pago_fecha, pago_detalle, pago_importe, pago_nro_tarjeta)
-SELECT DISTINCT PAGO_NUMERO, PAGO_TICKET, PAGO_MEDIO_DE_PAGO, PAGO_DESCUENTO_X_MEDIO, PAGO_FECHA, PAGO_DETALLE, PAGO_IMPORTE, PAGO_NRO_TARJETA
+INSERT INTO [MASTER_COOKS].[Pago](pago_numero, pago_clie_apellido, pago_clie_documento, pago_ticket_numero, pago_ticket_sucursal, pago_ticket_tipo, pago_medio_de_pago_id, pago_monto_descontado, pago_fecha, pago_importe, pago_nro_tarjeta. pago_tarjeta_cuotas)
+SELECT DISTINCT 
+    -- generar PAGO_NUMERO, 
+    CAST(CLIENTE_APELLIDO AS VARCHAR(30)),
+    CAST(CLIENTE_DOCUMENTO AS DECIMAL(8,0)),
+    CAST(TICKET_NUMERO AS DECIMAL(18,0)), 
+    --PASAR SUCURSAL_NOMBRE A NUMERO DE SUCURSAL COMO DECIMAL(6,0)
+    CAST(MEDI_NOMBRE AS VARCHAR(30)), 
+    --CALCULAR MONTO DESCONTADO
+    CAST(PAGO_FECHA AS DATE), 
+    CAST(PAGO_IMPORTE AS DECIMAL(18,2)) 
+    cast(PAGO_TARJETA_NRO AS DECIMAL(18,0)),
 FROM [gd_esquema].[Maestra]
 --WHERE PAGO_NUMERO IS NOT NULL;
+--VER LO DE DETALLE PAGO SI NO ES UNA CLASE Y CORREGIRLO
 
 -- INSERT para la tabla Estado_Envio
 INSERT INTO [MASTER_COOKS].[Estado_Envio] (esta_nombre)
@@ -375,4 +388,13 @@ SELECT DISTINCT ENVIO_CODIGO, ENVIO_TICKET, ENVIO_FECHA_PROGRAMADA, ENVIO_HORARI
 FROM [gd_esquema].[Maestra]
 --WHERE ENVIO_CODIGO IS NOT NULL;
 
---promocion_x_ticket, item_ticket, caja, tipo_caja, marca, rebaja_producto, promocion, regla
+INSERT INTO [MASTER_COOKS].[Promocion_X_Ticket] (promx_promocion_id, promx_tick_numero, promx_tick_tipo, promx_tick_sucursal_id, promx_tick_promocion_aplicada)
+SELECT DISTINCT 
+    CAST(PROMO_CODIGO AS DECIMAL(4,0)),
+    CAST(TICKET_NUMERO AS DECIMAL(18,0)),
+    CAST(TICKET_TIPO_COMPROBANTE AS CHAR(1)),
+    --CAST(SUCURSAL_NOMBRE AS DECIMAL(6,0)), (SUCU ID)
+    CAST(PROMO_APLICADA_DESCUENTO AS DECIMAL(10,2))
+FROM [gd_esquema].[Maestra]
+
+--item_ticket, caja, tipo_caja, marca, rebaja_producto, promocion, regla
