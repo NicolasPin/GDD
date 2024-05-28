@@ -77,16 +77,6 @@ create table [MASTER_COOKS].[Caja] (
     foreign key (caja_tipo_id) references [MASTER_COOKS].[Tipo_Caja](tipo_descripcion)
 )
 
-create table [MASTER_COOKS].[Detalle_Pago] (
-    deta_codigo decimal(18,0) primary key,
-    deta_cliente_documento decimal(8,0) null,
-    deta_cliente_apellido varchar(30) null,
-    deta_numero_tarjeta decimal(18,0) null,
-    deta_fecha_vencimiento_tarjeta date null,
-    deta_cuotas decimal(3,0) null,
-    foreign key (deta_cliente_documento, deta_cliente_apellido) references [MASTER_COOKS].[Cliente](clie_documento, clie_apellido)
-)
-
 create table [MASTER_COOKS].[Cliente] (
     clie_documento decimal(8,0),
     clie_apellido varchar(30),
@@ -100,6 +90,16 @@ create table [MASTER_COOKS].[Cliente] (
     clie_provincia_id varchar(60) null,
     primary key (clie_documento, clie_apellido),
     foreign key (clie_localidad_id, clie_provincia_id) references [MASTER_COOKS].[Localidad](loca_nombre, loca_provincia_id)
+)
+
+create table [MASTER_COOKS].[Detalle_Pago] (
+    deta_codigo decimal(18,0) primary key,
+    deta_cliente_documento decimal(8,0) null,
+    deta_cliente_apellido varchar(30) null,
+    deta_numero_tarjeta decimal(18,0) null,
+    deta_fecha_vencimiento_tarjeta date null,
+    deta_cuotas decimal(3,0) null,
+    foreign key (deta_cliente_documento, deta_cliente_apellido) references [MASTER_COOKS].[Cliente](clie_documento, clie_apellido)
 )
 
 create table [MASTER_COOKS].[Ticket] (
