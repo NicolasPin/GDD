@@ -42,7 +42,7 @@ create table [MASTER_COOKS].[Empleado] (
     empl_fecha_ingreso date null,
     empl_dni decimal(8,0) null,
     empl_telefono varchar(20) null,
-    empl_mail varchar(50) null,
+    empl_mail nvarchar(50) null,
     empl_fecha_nacimiento date null,
     empl_sucursal_id decimal(6,0) null,
     foreign key (empl_sucursal_id) references [MASTER_COOKS].[Sucursal](sucu_numero)
@@ -83,7 +83,7 @@ create table [MASTER_COOKS].[Cliente] (
     clie_nombre varchar(30) null,
     clie_fecha_registro date null,
     clie_telefono varchar(20) null,
-    clie_mail varchar(50) null,
+    clie_mail nvarchar(50) null,
     clie_fecha_nacimiento date null,
     clie_domicilio varchar(50) null,
     clie_localidad_id varchar(50) null,
