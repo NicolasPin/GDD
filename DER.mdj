@@ -5370,7 +5370,7 @@
 									"top": 885,
 									"width": 331.2978515625,
 									"height": 13,
-									"text": "Detalle Pago"
+									"text": "Detalle_Pago"
 								},
 								{
 									"_type": "ERDColumnCompartmentView",
@@ -8506,7 +8506,7 @@
 					"_parent": {
 						"$ref": "AAAAAAGPNbPHNmSaAcc="
 					},
-					"name": "Detalle Pago",
+					"name": "Detalle_Pago",
 					"ownedElements": [
 						{
 							"_type": "ERDRelationship",
@@ -8598,7 +8598,7 @@
 							},
 							"name": "deta_cuotas",
 							"type": "decimal",
-							"length": "2,0"
+							"length": "3,0"
 						}
 					]
 				}
