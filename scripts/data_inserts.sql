@@ -15,14 +15,6 @@ create table MASTER_COOKS.Localidad (
     foreign key (loca_provincia_id) references MASTER_COOKS.Provincia(prov_nombre)
 )
 
-create table MASTER_COOKS.Sucursal (
-	sucu_numero decimal(6,0) primary key,
-	sucu_direccion varchar(50) null,
-	sucu_localidad_id varchar(50) null,
-    sucu_provincia_id varchar(60) null,
-    foreign key (sucu_localidad_id, sucu_provincia_id) references MASTER_COOKS.Localidad(loca_nombre, loca_provincia_id),
-)
-
 create table MASTER_COOKS.Supermercado (
 	supe_cuit char(13) primary key,
 	supe_nombre varchar(30) null,
@@ -31,15 +23,23 @@ create table MASTER_COOKS.Supermercado (
 	supe_domicilio varchar(50) null,
 	supe_fecha_ini_actividad date null,
 	supe_cond_fiscal varchar(50) null,
-	supe_sucursal_id decimal(6,0) null,
     supe_localidad_id varchar(50) null,
     supe_provincia_id varchar(60) null,
-    foreign key (supe_localidad_id, supe_provincia_id) references MASTER_COOKS.Localidad(loca_nombre, loca_provincia_id),
-	foreign key (supe_sucursal_id) references MASTER_COOKS.Sucursal(sucu_numero)
+    foreign key (supe_localidad_id, supe_provincia_id) references MASTER_COOKS.Localidad(loca_nombre, loca_provincia_id)
+)
+
+create table MASTER_COOKS.Sucursal (
+	sucu_numero decimal(6,0) primary key,
+	sucu_direccion varchar(50) null,
+	sucu_supermercado_id char(13) null,
+	sucu_localidad_id varchar(50) null,
+    sucu_provincia_id varchar(60) null,
+	foreign key (sucu_supermercado_id) references MASTER_COOKS.Supermercado(supe_cuit),
+    foreign key (sucu_localidad_id, sucu_provincia_id) references MASTER_COOKS.Localidad(loca_nombre, loca_provincia_id)
 )
 
 create table MASTER_COOKS.Empleado (
-    empl_legajo decimal(6,0) primary key,
+    empl_legajo varchar(60) primary key,
     empl_nombre varchar(30) null,
     empl_apellido varchar(30) null,
     empl_fecha_ingreso date null,
@@ -50,7 +50,6 @@ create table MASTER_COOKS.Empleado (
     empl_sucursal_id decimal(6,0) null,
     foreign key (empl_sucursal_id) references MASTER_COOKS.Sucursal(sucu_numero)
 )
-
 
 create table MASTER_COOKS.Descuento_Medio_Pago(
     desc_codigo decimal(5,0) primary key,
@@ -111,7 +110,7 @@ create table MASTER_COOKS.Ticket (
     tick_tipo char(1),
     tick_cliente_documento decimal(8,0) null,
 	tick_cliente_apellido varchar(30) null,
-    tick_vendedor_id decimal(6,0) null,
+    tick_vendedor_id varchar(60) null,
     tick_caja_id decimal(3,0) null,
     tick_fecha_hora datetime null,
     tick_total decimal(18,2) null,
@@ -239,9 +238,6 @@ create table MASTER_COOKS.Promocion_X_Ticket (
 )
 
 ----------------------------- SEQ
-CREATE SEQUENCE MASTER_COOKS.seq_empleado_legajo
-START WITH 1
-INCREMENT BY 1;
 
 CREATE SEQUENCE MASTER_COOKS.seq_pago_numero
 START WITH 1
@@ -347,7 +343,6 @@ BEGIN
 END;
 GO
 
-
 -----------------INSERTS
 INSERT INTO MASTER_COOKS.Provincia(prov_nombre)
 SELECT DISTINCT
@@ -362,17 +357,9 @@ SELECT DISTINCT
 FROM gd_esquema.Maestra
 WHERE CLIENTE_LOCALIDAD IS NOT NULL AND CLIENTE_PROVINCIA IS NOT NULL;
 
-INSERT INTO MASTER_COOKS.Sucursal (sucu_numero, sucu_direccion, sucu_localidad_id, sucu_provincia_id)
-SELECT DISTINCT
-    CAST(dbo.ExtractSucursal(SUCURSAL_NOMBRE) AS DECIMAL(6,0)),
-    CAST(SUCURSAL_DIRECCION AS VARCHAR(50)),
-    CAST(SUCURSAL_LOCALIDAD AS VARCHAR(50)),
-    CAST(SUCURSAL_PROVINCIA AS VARCHAR(60))
-FROM gd_esquema.Maestra
-WHERE SUCURSAL_NOMBRE IS NOT NULL AND SUCURSAL_LOCALIDAD IS NOT NULL AND SUCURSAL_PROVINCIA IS NOT NULL;
 
-INSERT INTO MASTER_COOKS.Supermercado (supe_cuit, supe_nombre, supe_localidad_id, supe_provincia_id, supe_razon_social, supe_ing_brutos, supe_domicilio, supe_fecha_ini_actividad, supe_cond_fiscal, supe_sucursal_id)
-SELECT distinct 
+INSERT INTO MASTER_COOKS.Supermercado(supe_cuit, supe_nombre, supe_localidad_id, supe_provincia_id, supe_razon_social, supe_ing_brutos, supe_domicilio, supe_fecha_ini_actividad, supe_cond_fiscal)
+SELECT DISTINCT 
 	CAST(SUPER_CUIT AS CHAR(13)),
     CAST(SUPER_NOMBRE AS VARCHAR(30)),
     CAST(SUPER_LOCALIDAD AS VARCHAR(50)),
@@ -381,15 +368,26 @@ SELECT distinct
     CAST(dbo.ExtractIIBB(SUPER_IIBB) AS CHAR(9)),
     CAST(SUPER_DOMICILIO AS VARCHAR(50)),
     CAST(SUPER_FECHA_INI_ACTIVIDAD AS DATE),
-    CAST(SUPER_CONDICION_FISCAL AS VARCHAR(50)),
-    CAST(dbo.ExtractSucursal(SUCURSAL_NOMBRE) AS DECIMAL(6,0))
+    CAST(SUPER_CONDICION_FISCAL AS VARCHAR(50))
 FROM gd_esquema.Maestra
-WHERE SUPER_CUIT IS NOT NULL AND SUPER_LOCALIDAD IS NOT NULL AND SUPER_PROVINCIA IS NOT NULL AND SUCURSAL_NOMBRE IS NOT NULL;
+WHERE SUPER_CUIT IS NOT NULL AND SUPER_LOCALIDAD IS NOT NULL AND SUPER_PROVINCIA IS NOT NULL;
+
+INSERT INTO MASTER_COOKS.Sucursal (sucu_numero, sucu_direccion, sucu_localidad_id, sucu_provincia_id, sucu_supermercado_id)
+SELECT DISTINCT
+    CAST(dbo.ExtractSucursal(SUCURSAL_NOMBRE) AS DECIMAL(6,0)),
+    CAST(SUCURSAL_DIRECCION AS VARCHAR(50)),
+    CAST(SUCURSAL_LOCALIDAD AS VARCHAR(50)),
+    CAST(SUCURSAL_PROVINCIA AS VARCHAR(60)),
+	CAST(SUPER_CUIT AS CHAR(13))
+FROM gd_esquema.Maestra
+WHERE SUCURSAL_NOMBRE IS NOT NULL AND SUCURSAL_LOCALIDAD IS NOT NULL AND SUCURSAL_PROVINCIA IS NOT NULL AND SUPER_CUIT IS NOT NULL;
+
+--falta cargar supermercado
 
 INSERT INTO MASTER_COOKS.Empleado
 (empl_legajo, empl_nombre, empl_apellido, empl_fecha_ingreso, empl_dni, empl_telefono, empl_mail, empl_fecha_nacimiento, empl_sucursal_id)
-SELECT 
-    CAST(NEXT VALUE FOR MASTER_COOKS.seq_empleado_legajo AS DECIMAL(6,0)),
+SELECT DISTINCT
+	CAST(CONCAT(EMPLEADO_DNI,EMPLEADO_TELEFONO) AS VARCHAR(60)),
     CAST(EMPLEADO_NOMBRE AS VARCHAR(30)),
     CAST(EMPLEADO_APELLIDO AS VARCHAR(30)),
     CAST(EMPLEADO_FECHA_REGISTRO AS DATE),
@@ -399,6 +397,7 @@ SELECT
     CAST(EMPLEADO_FECHA_NACIMIENTO AS DATE),
     CAST(dbo.ExtractSucursal(SUCURSAL_NOMBRE) AS DECIMAL(6,0))
 FROM gd_esquema.Maestra
+where EMPLEADO_DNI IS NOT NULL
 --WHERE EMPLEADO_NOMBRE IS NOT NULL AND EMPLEADO_APELLIDO IS NOT NULL AND SUCURSAL_NOMBRE IS NOT NULL;
 
 INSERT INTO MASTER_COOKS.Descuento_Medio_Pago(desc_codigo, desc_descripcion, desc_fecha_inicio, desc_fecha_fin, desc_porcentaje, desc_importe_tope)
@@ -465,7 +464,7 @@ SELECT
     CAST(TICKET_TIPO_COMPROBANTE AS CHAR(1)),
     CAST(CLIENTE_APELLIDO AS VARCHAR(30)),
     CAST(CLIENTE_DNI AS DECIMAL(8,0)),
-	CAST(NEXT VALUE FOR MASTER_COOKS.seq_empleado_legajo AS DECIMAL(6,0)),
+	CAST(CONCAT(EMPLEADO_DNI,EMPLEADO_TELEFONO) AS VARCHAR(60)),
     CAST(CAJA_NUMERO AS DECIMAL(3,0)),
     CAST(TICKET_FECHA_HORA AS DATETIME),
     CAST(TICKET_TOTAL_TICKET AS DECIMAL(18,2)),

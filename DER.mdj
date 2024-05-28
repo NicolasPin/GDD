@@ -93,7 +93,7 @@
 									"font": "Arial;13;1",
 									"left": 760,
 									"top": 397,
-									"width": 237.3525390625,
+									"width": 269.14794921875,
 									"height": 13,
 									"text": "Sucursal"
 								},
@@ -119,7 +119,7 @@
 											"font": "Arial;13;0",
 											"left": 765,
 											"top": 420,
-											"width": 227.3525390625,
+											"width": 259.14794921875,
 											"height": 13
 										},
 										{
@@ -134,7 +134,7 @@
 											"font": "Arial;13;0",
 											"left": 765,
 											"top": 435,
-											"width": 227.3525390625,
+											"width": 259.14794921875,
 											"height": 13
 										},
 										{
@@ -149,7 +149,22 @@
 											"font": "Arial;13;0",
 											"left": 765,
 											"top": 450,
-											"width": 227.3525390625,
+											"width": 259.14794921875,
+											"height": 13
+										},
+										{
+											"_type": "ERDColumnView",
+											"_id": "AAAAAAGPwRZ+0ONzwY4=",
+											"_parent": {
+												"$ref": "AAAAAAGPNbPhqmSpnPA="
+											},
+											"model": {
+												"$ref": "AAAAAAGPwRZ+zONw9L0="
+											},
+											"font": "Arial;13;0",
+											"left": 765,
+											"top": 465,
+											"width": 259.14794921875,
 											"height": 13
 										},
 										{
@@ -163,23 +178,23 @@
 											},
 											"font": "Arial;13;0",
 											"left": 765,
-											"top": 465,
-											"width": 227.3525390625,
+											"top": 480,
+											"width": 259.14794921875,
 											"height": 13
 										}
 									],
 									"font": "Arial;13;0",
 									"left": 760,
 									"top": 415,
-									"width": 237.3525390625,
-									"height": 68
+									"width": 269.14794921875,
+									"height": 83
 								}
 							],
 							"font": "Arial;13;0",
 							"left": 760,
 							"top": 392,
-							"width": 237.3525390625,
-							"height": 91,
+							"width": 269.14794921875,
+							"height": 106,
 							"autoResize": true,
 							"nameLabel": {
 								"$ref": "AAAAAAGPNbPhqmSotCE="
@@ -3107,7 +3122,7 @@
 									},
 									"visible": false,
 									"font": "Arial;13;0",
-									"left": 1150,
+									"left": 1166,
 									"top": 419,
 									"height": 13,
 									"alpha": 1.5707963267948966,
@@ -3124,7 +3139,7 @@
 										"$ref": "AAAAAAGPSw/6vinu1Es="
 									},
 									"font": "Arial;13;0",
-									"left": 1022,
+									"left": 1054,
 									"top": 419,
 									"height": 13,
 									"autoResize": true,
@@ -3161,7 +3176,7 @@
 								"$ref": "AAAAAAGPNbPhqmSn2bA="
 							},
 							"lineStyle": 2,
-							"points": "997:440;1304:440",
+							"points": "1029:440;1304:440",
 							"nameLabel": {
 								"$ref": "AAAAAAGPSw/6vinvvU0="
 							},
@@ -3523,7 +3538,7 @@
 									"font": "Arial;13;1",
 									"left": 952,
 									"top": 125,
-									"width": 280.71337890625,
+									"width": 275.6669921875,
 									"height": 13,
 									"text": "Supermercado"
 								},
@@ -3549,22 +3564,7 @@
 											"font": "Arial;13;0",
 											"left": 957,
 											"top": 148,
-											"width": 270.71337890625,
-											"height": 13
-										},
-										{
-											"_type": "ERDColumnView",
-											"_id": "AAAAAAGPl3+9bzlwFrs=",
-											"_parent": {
-												"$ref": "AAAAAAGPlztIbDhX/dc="
-											},
-											"model": {
-												"$ref": "AAAAAAGPl3+9aDltUKY="
-											},
-											"font": "Arial;13;0",
-											"left": 957,
-											"top": 163,
-											"width": 270.71337890625,
+											"width": 265.6669921875,
 											"height": 13
 										},
 										{
@@ -3578,8 +3578,8 @@
 											},
 											"font": "Arial;13;0",
 											"left": 957,
-											"top": 178,
-											"width": 270.71337890625,
+											"top": 163,
+											"width": 265.6669921875,
 											"height": 13
 										},
 										{
@@ -3593,8 +3593,8 @@
 											},
 											"font": "Arial;13;0",
 											"left": 957,
-											"top": 193,
-											"width": 270.71337890625,
+											"top": 178,
+											"width": 265.6669921875,
 											"height": 13
 										},
 										{
@@ -3608,8 +3608,8 @@
 											},
 											"font": "Arial;13;0",
 											"left": 957,
-											"top": 208,
-											"width": 270.71337890625,
+											"top": 193,
+											"width": 265.6669921875,
 											"height": 13
 										},
 										{
@@ -3623,8 +3623,8 @@
 											},
 											"font": "Arial;13;0",
 											"left": 957,
-											"top": 223,
-											"width": 270.71337890625,
+											"top": 208,
+											"width": 265.6669921875,
 											"height": 13
 										},
 										{
@@ -3638,8 +3638,8 @@
 											},
 											"font": "Arial;13;0",
 											"left": 957,
-											"top": 238,
-											"width": 270.71337890625,
+											"top": 223,
+											"width": 265.6669921875,
 											"height": 13
 										},
 										{
@@ -3653,8 +3653,8 @@
 											},
 											"font": "Arial;13;0",
 											"left": 957,
-											"top": 253,
-											"width": 270.71337890625,
+											"top": 238,
+											"width": 265.6669921875,
 											"height": 13
 										},
 										{
@@ -3668,8 +3668,8 @@
 											},
 											"font": "Arial;13;0",
 											"left": 957,
-											"top": 268,
-											"width": 270.71337890625,
+											"top": 253,
+											"width": 265.6669921875,
 											"height": 13
 										},
 										{
@@ -3683,23 +3683,23 @@
 											},
 											"font": "Arial;13;0",
 											"left": 957,
-											"top": 283,
-											"width": 270.71337890625,
+											"top": 268,
+											"width": 265.6669921875,
 											"height": 13
 										}
 									],
 									"font": "Arial;13;0",
 									"left": 952,
 									"top": 143,
-									"width": 280.71337890625,
-									"height": 158
+									"width": 275.6669921875,
+									"height": 143
 								}
 							],
 							"font": "Arial;13;0",
 							"left": 952,
 							"top": 120,
-							"width": 280.71337890625,
-							"height": 181,
+							"width": 275.6669921875,
+							"height": 166,
 							"autoResize": true,
 							"nameLabel": {
 								"$ref": "AAAAAAGPlztIbDhW2uA="
@@ -5077,7 +5077,7 @@
 										"$ref": "AAAAAAGPqzjN3FPwwx4="
 									},
 									"font": "Arial;13;0",
-									"left": 1022,
+									"left": 1054,
 									"top": 472,
 									"height": 13,
 									"alpha": -0.5235987755982988,
@@ -5095,7 +5095,7 @@
 								"$ref": "AAAAAAGPNcdHi2Tn8Ds="
 							},
 							"lineStyle": 2,
-							"points": "1272:696;1272:464;997:464",
+							"points": "1272:696;1272:464;1029:464",
 							"nameLabel": {
 								"$ref": "AAAAAAGPqzjN3FPxM64="
 							},
@@ -5753,6 +5753,17 @@
 							"name": "sucu_provincia_id",
 							"type": "varchar",
 							"length": "60",
+							"foreignKey": true
+						},
+						{
+							"_type": "ERDColumn",
+							"_id": "AAAAAAGPwRZ+zONw9L0=",
+							"_parent": {
+								"$ref": "AAAAAAGPNbPhqmSlZd8="
+							},
+							"name": "sucu_supermercado_id",
+							"type": "char",
+							"length": "13",
 							"foreignKey": true
 						},
 						{
@@ -7955,17 +7966,6 @@
 							"type": "char",
 							"length": "13",
 							"primaryKey": true
-						},
-						{
-							"_type": "ERDColumn",
-							"_id": "AAAAAAGPl3+9aDltUKY=",
-							"_parent": {
-								"$ref": "AAAAAAGPlztIbDhT+v4="
-							},
-							"name": "supe_sucursal_id",
-							"type": "decimal",
-							"length": "6,0",
-							"foreignKey": true
 						},
 						{
 							"_type": "ERDColumn",
