@@ -3965,7 +3965,7 @@
 									"top": 293,
 									"width": 218.5634765625,
 									"height": 13,
-									"text": "Tipo_caja"
+									"text": "Tipo_Caja"
 								},
 								{
 									"_type": "ERDColumnCompartmentView",
@@ -5367,7 +5367,7 @@
 									},
 									"font": "Arial;13;1",
 									"left": 536,
-									"top": 885,
+									"top": 877,
 									"width": 331.2978515625,
 									"height": 13,
 									"text": "Detalle_Pago"
@@ -5393,7 +5393,7 @@
 											},
 											"font": "Arial;13;0",
 											"left": 541,
-											"top": 908,
+											"top": 900,
 											"width": 321.2978515625,
 											"height": 13
 										},
@@ -5408,7 +5408,7 @@
 											},
 											"font": "Arial;13;0",
 											"left": 541,
-											"top": 923,
+											"top": 915,
 											"width": 321.2978515625,
 											"height": 13
 										},
@@ -5423,7 +5423,7 @@
 											},
 											"font": "Arial;13;0",
 											"left": 541,
-											"top": 938,
+											"top": 930,
 											"width": 321.2978515625,
 											"height": 13
 										},
@@ -5438,7 +5438,7 @@
 											},
 											"font": "Arial;13;0",
 											"left": 541,
-											"top": 953,
+											"top": 945,
 											"width": 321.2978515625,
 											"height": 13
 										},
@@ -5453,7 +5453,7 @@
 											},
 											"font": "Arial;13;0",
 											"left": 541,
-											"top": 968,
+											"top": 960,
 											"width": 321.2978515625,
 											"height": 13
 										},
@@ -5468,21 +5468,21 @@
 											},
 											"font": "Arial;13;0",
 											"left": 541,
-											"top": 983,
+											"top": 975,
 											"width": 321.2978515625,
 											"height": 13
 										}
 									],
 									"font": "Arial;13;0",
 									"left": 536,
-									"top": 903,
+									"top": 895,
 									"width": 331.2978515625,
 									"height": 98
 								}
 							],
 							"font": "Arial;13;0",
 							"left": 536,
-							"top": 880,
+							"top": 872,
 							"width": 331.2978515625,
 							"height": 121,
 							"nameLabel": {
@@ -5511,7 +5511,7 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"left": 717,
-									"top": 1013,
+									"top": 1009,
 									"height": 13,
 									"alpha": 1.5707963267948966,
 									"distance": 15,
@@ -5528,7 +5528,7 @@
 									},
 									"font": "Arial;13;0",
 									"left": 718,
-									"top": 1020,
+									"top": 1012,
 									"height": 13,
 									"alpha": 0.5235987755982988,
 									"distance": 30,
@@ -5562,7 +5562,7 @@
 								"$ref": "AAAAAAGPv3uR3xCIjRE="
 							},
 							"lineStyle": 2,
-							"points": "703:1001;703:1040",
+							"points": "703:993;703:1040",
 							"nameLabel": {
 								"$ref": "AAAAAAGPv31kmRDMs6c="
 							},
@@ -5592,7 +5592,7 @@
 									"visible": false,
 									"font": "Arial;13;0",
 									"left": 713,
-									"top": 839,
+									"top": 835,
 									"height": 13,
 									"alpha": 1.5707963267948966,
 									"distance": 15,
@@ -5626,7 +5626,7 @@
 									},
 									"font": "Arial;13;0",
 									"left": 714,
-									"top": 848,
+									"top": 840,
 									"height": 13,
 									"alpha": -0.5235987755982988,
 									"distance": 30,
@@ -5643,7 +5643,7 @@
 								"$ref": "AAAAAAGPP+qLZf1Z71o="
 							},
 							"lineStyle": 2,
-							"points": "699:813;699:880",
+							"points": "699:813;699:872",
 							"nameLabel": {
 								"$ref": "AAAAAAGPv4TW+REdwG8="
 							},
@@ -6827,8 +6827,8 @@
 								"$ref": "AAAAAAGPNdgXsmYve6k="
 							},
 							"name": "pago_medio_de_pago_id",
-							"type": "decimal",
-							"length": "2,0",
+							"type": "varchar",
+							"length": "30",
 							"foreignKey": true
 						},
 						{
@@ -8227,7 +8227,7 @@
 					"_parent": {
 						"$ref": "AAAAAAGPNbPHNmSaAcc="
 					},
-					"name": "Tipo_caja",
+					"name": "Tipo_Caja",
 					"ownedElements": [
 						{
 							"_type": "ERDRelationship",
