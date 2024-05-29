@@ -52,22 +52,6 @@ create table MASTER_COOKS.Empleado (
 )
 
 
-create table MASTER_COOKS.Medio_De_Pago (
-    medi_descripcion nvarchar(50) primary key,
-    medi_tipo varchar(30) null
-)
-
-create table MASTER_COOKS.Descuento_Medio_Pago(
-    desc_codigo decimal(5,0) primary key,
-    desc_descripcion varchar(50) null,
-    desc_fecha_inicio date null,
-    desc_fecha_fin date null,
-    desc_porcentaje decimal(3,2) null,
-    desc_importe_tope decimal(8,2) null,
-	desc_medio_pago nvarchar(50) null,
-	foreign key (desc_medio_pago) references MASTER_COOKS.Medio_De_Pago(medi_descripcion)
-)
-
 create table MASTER_COOKS.Tipo_Caja (
     tipo_descripcion varchar(50) primary key
 )
@@ -97,7 +81,6 @@ create table MASTER_COOKS.Cliente (
     foreign key (clie_localidad_id, clie_provincia_id) references MASTER_COOKS.Localidad(loca_nombre, loca_provincia_id)
 )
 
-
 create table MASTER_COOKS.Ticket (
     tick_numero decimal(18,0),
     tick_tipo char(1),
@@ -120,8 +103,26 @@ create table MASTER_COOKS.Ticket (
 	foreign key (tick_sucursal_id) references MASTER_COOKS.Sucursal(sucu_numero)
 )
 
+create table MASTER_COOKS.Medio_De_Pago (
+    medi_descripcion nvarchar(50) primary key,
+--	medi_pago_id varchar(60) null,
+    medi_tipo nvarchar(30) null,
+--	foreign key (medi_pago_id) references MASTER_COOKS.Pago(pago_id)
+)
+
+create table MASTER_COOKS.Descuento_Medio_Pago(
+    desc_codigo decimal(5,0) primary key,
+    desc_descripcion varchar(50) null,
+    desc_fecha_inicio date null,
+    desc_fecha_fin date null,
+    desc_porcentaje decimal(3,2) null,
+    desc_importe_tope decimal(8,2) null,
+	desc_medio_pago nvarchar(50) null,
+	foreign key (desc_medio_pago) references MASTER_COOKS.Medio_De_Pago(medi_descripcion)
+)
+
 create table MASTER_COOKS.Pago (
-	pago_id varchar(60) primary key, --es un concat de pago ticket numero y pago fecha
+	pago_id varchar(60) primary key, --es un concat de pago ticket numero y pago ticket_sucursal
 	pago_ticket_numero decimal(18,0),
 	pago_fecha date,
 	pago_medio_de_pago_id nvarchar(50) null,
@@ -129,12 +130,13 @@ create table MASTER_COOKS.Pago (
 	pago_ticket_sucursal decimal(6,0) null,
     pago_importe decimal(18,2) null,
 	pago_monto_descontado decimal(10,2) null,
-	foreign key(pago_ticket_numero, pago_ticket_tipo, pago_ticket_sucursal) references MASTER_COOKS.Ticket(tick_numero, tick_tipo, tick_sucursal_id),
-    foreign key (pago_medio_de_pago_id) references MASTER_COOKS.Medio_De_Pago(medi_descripcion)
+	foreign key (pago_medio_de_pago_id) references MASTER_COOKS.Medio_De_Pago(medi_descripcion),
+	foreign key(pago_ticket_numero, pago_ticket_tipo, pago_ticket_sucursal) references MASTER_COOKS.Ticket(tick_numero, tick_tipo, tick_sucursal_id)
 )
 
+
 create table MASTER_COOKS.Detalle_Pago (
-	deta_numero_tarjeta decimal(18,0),
+	deta_numero_tarjeta varchar(18),
 	deta_pago_id varchar(60),
     deta_cliente_documento decimal(8,0) null,
     deta_cliente_apellido varchar(30) null,
@@ -150,13 +152,13 @@ create table MASTER_COOKS.Estado_Envio (
 )
 
 create table MASTER_COOKS.Envio (
-    envi_codigo decimal(18,0) primary key,
+    envi_codigo varchar(60) primary key,
     envi_ticket_numero decimal(18,0) null,
 	envi_ticket_tipo char(1) null,
 	envi_ticket_sucursal decimal(6,0) null,
     envi_fecha_programada date null,
-    envi_horario_inicio time null,
-    envi_horario_fin time null,
+    envi_horario_inicio varchar(2) null,
+    envi_horario_fin varchar(2) null,
     envi_fecha_hora_entrega datetime null,
     envi_costo decimal(18,2) null,
     envi_estado_id varchar(50) null,
@@ -169,13 +171,19 @@ create table MASTER_COOKS.Categoria (
 )
 
 create table MASTER_COOKS.Subcategoria (
-    subc_codigo decimal(8,0) primary key,
-    subc_categoria_id decimal(8,0) null,
-    foreign key (subc_categoria_id) references MASTER_COOKS.Categoria(cate_codigo)
+    subc_codigo decimal(8,0) primary key
+)
+
+create table MASTER_COOKS.Categoria_X_Subcategoria (
+	catx_categoria_id decimal(8,0),
+	catx_subcategoria_id decimal(8,0),
+	primary key (catx_categoria_id, catx_subcategoria_id),
+	foreign key (catx_categoria_id) references MASTER_COOKS.Categoria(cate_codigo),
+	foreign key (catx_subcategoria_id) references MASTER_COOKS.Subcategoria(subc_codigo)
 )
 
 create table MASTER_COOKS.Marca (
-    marc_id decimal(8,0) primary key
+    marc_id decimal(12,0) primary key
 )
 
 create table MASTER_COOKS.Regla (
@@ -202,7 +210,7 @@ CREATE TABLE MASTER_COOKS.Producto (
     prod_subcategoria_id decimal(8,0) null,
     prod_descripcion varchar(50) null,
     prod_precio_unitario decimal(10,2) null,
-    prod_marca_id decimal(8,0) null,
+    prod_marca_id decimal(12,0) null,
     foreign key (prod_subcategoria_id) references MASTER_COOKS.Subcategoria(subc_codigo),
     foreign key (prod_marca_id) references MASTER_COOKS.Marca(marc_id)
 )
@@ -239,12 +247,6 @@ create table MASTER_COOKS.Promocion_X_Ticket (
     foreign key (promx_tick_numero, promx_tick_tipo, promx_tick_sucursal_id) references MASTER_COOKS.Ticket(tick_numero, tick_tipo, tick_sucursal_id)
 )
 
------------------------------ SEQ
-
-CREATE SEQUENCE MASTER_COOKS.seq_envio_codigo
-START WITH 1
-INCREMENT BY 1;
-
 ---------FNCTIONS
 GO
 CREATE FUNCTION dbo.ExtractSucursal(
@@ -255,10 +257,10 @@ AS
 BEGIN
     DECLARE @output NVARCHAR(255);
 
-    SET @output = REPLACE(@input, 'Sucursal N°:', '');
+    SET @output = REPLACE(@input, 'Sucursal N°:' ,'');
 
     RETURN @output;
-END;
+END
 GO
 
 CREATE FUNCTION dbo.ExtractIIBB (
@@ -272,7 +274,21 @@ BEGIN
     SET @output = REPLACE(@input, 'Ingr. Brut. N°: ', '');
 
     RETURN @output;
-END;
+END
+GO
+
+CREATE FUNCTION dbo.ExtractCategoria (
+    @input NVARCHAR(255)
+)
+RETURNS NVARCHAR(255)
+AS
+BEGIN
+    DECLARE @output NVARCHAR(255);
+
+    SET @output = REPLACE(@input, 'Categoria N°', '');
+
+    RETURN @output;
+END
 GO
 
 CREATE FUNCTION dbo.ExtractSubCategoria (
@@ -286,7 +302,7 @@ BEGIN
     SET @output = REPLACE(@input, 'SubCategoria N°', '');
 
     RETURN @output;
-END;
+END
 GO
 
 CREATE FUNCTION dbo.ExtractProductoNombre (
@@ -300,7 +316,7 @@ BEGIN
     SET @output = REPLACE(@input, 'Codigo:', '');
 
     RETURN @output;
-END;
+END
 GO
 
 CREATE FUNCTION dbo.ExtractProductoMarca (
@@ -311,10 +327,10 @@ AS
 BEGIN
     DECLARE @output NVARCHAR(255);
 
-    SET @output = REPLACE(@input, 'Marca N°', '');
+    SET @output = REPLACE(@input, 'Marca N°','');
 
     RETURN @output;
-END;
+END
 GO
 
 CREATE FUNCTION dbo.CalcularCantidadProductos(
@@ -334,7 +350,7 @@ BEGIN
       AND item_sucursal_id = @tick_sucursal_id;
 
     RETURN @total_cantidad;
-END;
+END
 GO
 
 -----------------INSERTS
@@ -381,7 +397,7 @@ WHERE SUCURSAL_NOMBRE IS NOT NULL AND SUCURSAL_LOCALIDAD IS NOT NULL AND SUCURSA
 INSERT INTO MASTER_COOKS.Empleado
 (empl_legajo, empl_nombre, empl_apellido, empl_fecha_ingreso, empl_dni, empl_telefono, empl_mail, empl_fecha_nacimiento, empl_sucursal_id)
 SELECT DISTINCT
-	CAST(CONCAT(EMPLEADO_DNI, EMPLEADO_TELEFONO) AS VARCHAR(60)),
+	CAST(CONCAT(EMPLEADO_DNI,' ', EMPLEADO_TELEFONO) AS VARCHAR(60)),
     CAST(EMPLEADO_NOMBRE AS VARCHAR(30)),
     CAST(EMPLEADO_APELLIDO AS VARCHAR(30)),
     CAST(EMPLEADO_FECHA_REGISTRO AS DATE),
@@ -392,26 +408,6 @@ SELECT DISTINCT
     CAST(dbo.ExtractSucursal(SUCURSAL_NOMBRE) AS DECIMAL(6,0))
 FROM gd_esquema.Maestra
 WHERE EMPLEADO_DNI IS NOT NULL
-
-INSERT INTO MASTER_COOKS.Medio_De_Pago(medi_descripcion, medi_tipo)
-SELECT DISTINCT 
-	CAST(PAGO_MEDIO_PAGO AS NVARCHAR(50)),
-	CAST(PAGO_TIPO_MEDIO_PAGO AS VARCHAR(30))
-FROM gd_esquema.Maestra
-WHERE PAGO_TIPO_MEDIO_PAGO IS NOT NULL;
-
-
-INSERT INTO MASTER_COOKS.Descuento_Medio_Pago(desc_codigo, desc_descripcion, desc_fecha_inicio, desc_fecha_fin, desc_porcentaje, desc_importe_tope, desc_medio_pago)
-SELECT DISTINCT
-    CAST(DESCUENTO_CODIGO AS DECIMAL(5,0)),
-    CAST(DESCUENTO_DESCRIPCION AS VARCHAR(50)),
-    CAST(DESCUENTO_FECHA_INICIO AS DATE),
-    CAST(DESCUENTO_FECHA_FIN AS DATE),
-    CAST(DESCUENTO_PORCENTAJE_DESC AS DECIMAL(3,2)),
-    CAST(DESCUENTO_TOPE AS DECIMAL(8,2)),
-	CAST(PAGO_MEDIO_PAGO AS NVARCHAR(50))
-FROM gd_esquema.Maestra
-WHERE DESCUENTO_CODIGO IS NOT NULL AND PAGO_MEDIO_PAGO IS NOT NULL ;
 
 INSERT INTO MASTER_COOKS.Tipo_Caja (tipo_descripcion)
 SELECT DISTINCT
@@ -426,7 +422,6 @@ SELECT DISTINCT
     CAST(CAJA_TIPO AS VARCHAR(50))
 FROM gd_esquema.Maestra
 WHERE CAJA_NUMERO IS NOT NULL AND SUCURSAL_NOMBRE IS NOT NULL AND CAJA_TIPO IS NOT NULL;
-
 
 INSERT INTO MASTER_COOKS.Cliente (clie_documento, clie_apellido, clie_nombre, clie_fecha_registro, clie_telefono, clie_mail, clie_fecha_nacimiento, clie_domicilio, clie_localidad_id, clie_provincia_id)
 SELECT DISTINCT
@@ -443,96 +438,124 @@ SELECT DISTINCT
 FROM gd_esquema.Maestra
 WHERE CLIENTE_DNI IS NOT NULL and CLIENTE_APELLIDO IS NOT NULL AND CLIENTE_LOCALIDAD IS NOT NULL AND CLIENTE_PROVINCIA IS NOT NULL;
 
---NO FUNCIONA
-INSERT INTO MASTER_COOKS.Ticket (tick_numero, tick_tipo, tick_cliente_apellido, tick_cliente_documento, tick_vendedor_id, tick_caja_numero, tick_fecha_hora, tick_total, tick_subtotal_productos, tick_total_descuento_promocion, tick_total_descuento_aplicado_mp, tick_total_envio, tick_cantidad_productos, tick_sucursal_id)
+--NO FUNCIONA LA FUNCION CALCULARCATNIDADPRODUCTOS
+INSERT INTO MASTER_COOKS.Ticket (tick_numero, tick_tipo, tick_sucursal_id, tick_cliente_apellido, tick_cliente_documento, tick_vendedor_id, tick_caja_numero, tick_fecha_hora, tick_total, tick_subtotal_productos, tick_total_descuento_promocion, tick_total_descuento_aplicado_mp, tick_total_envio) /*tick_cantidad_productos*/
 SELECT DISTINCT
     CAST(TICKET_NUMERO AS DECIMAL(18,0)), 
-    CAST(TICKET_TIPO_COMPROBANTE AS CHAR(1)),
-    CAST(CLIENTE_APELLIDO AS VARCHAR(30)),
-    CAST(CLIENTE_DNI AS DECIMAL(8,0)),
-	CAST(CONCAT(EMPLEADO_DNI,EMPLEADO_TELEFONO) AS VARCHAR(60)),
-    CAST(CAJA_NUMERO AS DECIMAL(3,0)),
-    CAST(TICKET_FECHA_HORA AS DATETIME),
-    CAST(TICKET_TOTAL_TICKET AS DECIMAL(18,2)),
-    CAST(TICKET_SUBTOTAL_PRODUCTOS AS DECIMAL(10,2)),
-    CAST(TICKET_TOTAL_DESCUENTO_APLICADO AS DECIMAL(10,2)) ,
-    CAST(TICKET_TOTAL_DESCUENTO_APLICADO_MP AS DECIMAL(10,2)),
-    CAST(TICKET_TOTAL_ENVIO AS DECIMAL(10,2)),
-    CAST(dbo.ExtractSucursal(SUCURSAL_NOMBRE) AS DECIMAL(6,0)),
-	dbo.CalcularCantidadProductos(
+    CAST(MAX(TICKET_TIPO_COMPROBANTE) AS CHAR(1)),
+	CAST(MAX(dbo.ExtractSucursal(SUCURSAL_NOMBRE)) AS DECIMAL(6,0)),
+    CAST(MAX(CLIENTE_APELLIDO) AS VARCHAR(30)),
+    CAST(MAX(CLIENTE_DNI) AS DECIMAL(8,0)),
+	CAST(MAX(CONCAT(EMPLEADO_DNI,' ', EMPLEADO_TELEFONO)) AS VARCHAR(60)) AS empl_legajo,
+    CAST(MAX(CAJA_NUMERO) AS DECIMAL(3,0)),
+    CAST(MAX(TICKET_FECHA_HORA) AS DATETIME),
+    CAST(MAX(TICKET_TOTAL_TICKET) AS DECIMAL(18,2)),
+    CAST(MAX(TICKET_SUBTOTAL_PRODUCTOS) AS DECIMAL(10,2)),
+    CAST(MAX(TICKET_TOTAL_DESCUENTO_APLICADO) AS DECIMAL(10,2)) ,
+    CAST(MAX(TICKET_TOTAL_DESCUENTO_APLICADO_MP) AS DECIMAL(10,2)),
+    CAST(MAX(TICKET_TOTAL_ENVIO) AS DECIMAL(10,2))
+	/*dbo.CalcularCantidadProductos(
 		TICKET_NUMERO,
 		TICKET_TIPO_COMPROBANTE,
-		CAST(dbo.ExtractSucursal(SUCURSAL_NOMBRE) AS DECIMAL(6,0)))
+		CAST(MAX(dbo.ExtractSucursal(SUCURSAL_NOMBRE)) AS DECIMAL(6,0))) AS tick_cantidad_productos */
 FROM gd_esquema.Maestra
-WHERE TICKET_NUMERO IS NOT NULL AND TICKET_TIPO_COMPROBANTE IS NOT NULL AND SUCURSAL_NOMBRE IS NOT NULL AND CAJA_NUMERO IS NOT NULL AND CLIENTE_APELLIDO IS NOT NULL AND CLIENTE_DNI IS NOT NULL AND EMPLEADO_DNI IS NOT NULL ;
+WHERE TICKET_NUMERO IS NOT NULL AND TICKET_TIPO_COMPROBANTE IS NOT NULL AND SUCURSAL_NOMBRE IS NOT NULL
+GROUP BY TICKET_NUMERO, TICKET_TIPO_COMPROBANTE, SUCURSAL_NOMBRE;
 
-INSERT INTO MASTER_COOKS.Pago(pago_id, pago_ticket_numero, pago_fecha, pago_medio_de_pago_id,pago_ticket_tipo,pago_ticket_sucursal, pago_importe,pago_monto_descontado)
+
+INSERT INTO MASTER_COOKS.Medio_De_Pago(medi_descripcion, medi_tipo)
+SELECT DISTINCT 
+	CAST(PAGO_MEDIO_PAGO AS NVARCHAR(50)),
+	CAST(PAGO_TIPO_MEDIO_PAGO AS VARCHAR(30))
+FROM gd_esquema.Maestra
+WHERE PAGO_TIPO_MEDIO_PAGO IS NOT NULL;
+
+INSERT INTO MASTER_COOKS.Descuento_Medio_Pago(desc_codigo, desc_descripcion, desc_fecha_inicio, desc_fecha_fin, desc_porcentaje, desc_importe_tope, desc_medio_pago)
 SELECT DISTINCT
-	CAST(CONCAT(TICKET_NUMERO, PAGO_FECHA) AS VARCHAR(60)),
-    CAST(TICKET_NUMERO AS DECIMAL(18,0)), 
-	CAST(PAGO_FECHA AS DATE),
-    CAST(PAGO_TIPO_MEDIO_PAGO AS NVARCHAR(50)),
-    CAST(TICKET_TIPO_COMPROBANTE AS CHAR(1)),
-    CAST(dbo.ExtractSucursal(SUCURSAL_NOMBRE) AS DECIMAL(6,0)),
-    CAST(PAGO_IMPORTE AS DECIMAL(18,2)),
-    CAST(PAGO_DESCUENTO_APLICADO AS DECIMAL(10,2))
+    CAST(DESCUENTO_CODIGO AS DECIMAL(5,0)),
+    CAST(DESCUENTO_DESCRIPCION AS VARCHAR(50)),
+    CAST(DESCUENTO_FECHA_INICIO AS DATE),
+    CAST(DESCUENTO_FECHA_FIN AS DATE),
+    CAST(DESCUENTO_PORCENTAJE_DESC AS DECIMAL(3,2)),
+    CAST(DESCUENTO_TOPE AS DECIMAL(8,2)),
+	CAST(PAGO_MEDIO_PAGO AS NVARCHAR(50))
 FROM gd_esquema.Maestra
-WHERE CONCAT(TICKET_NUMERO, PAGO_FECHA) IS NOT NULL AND TICKET_TIPO_COMPROBANTE IS NOT NULL AND SUCURSAL_NOMBRE IS NOT NULL AND PAGO_TIPO_MEDIO_PAGO IS NOT NULL;
+WHERE DESCUENTO_CODIGO IS NOT NULL AND PAGO_MEDIO_PAGO IS NOT NULL;
 
+INSERT INTO MASTER_COOKS.Pago(pago_id, pago_ticket_sucursal, pago_ticket_numero, pago_ticket_tipo, pago_medio_de_pago_id, pago_fecha, pago_importe,pago_monto_descontado)
+SELECT DISTINCT
+	CAST(CONCAT(TICKET_NUMERO, ' ', dbo.ExtractSucursal(SUCURSAL_NOMBRE)) AS VARCHAR(60)),
+    CAST(MAX(dbo.ExtractSucursal(SUCURSAL_NOMBRE)) AS DECIMAL(6,0)),
+    CAST(MAX(TICKET_NUMERO) AS DECIMAL(18,0)), 
+    CAST(MAX(TICKET_TIPO_COMPROBANTE) AS CHAR(1)),
+	CAST(MAX(PAGO_MEDIO_PAGO) AS NVARCHAR(50)),
+	CAST(MAX(PAGO_FECHA) AS DATE),
+    CAST(MAX(PAGO_IMPORTE) AS DECIMAL(18,2)),
+    CAST(MAX(PAGO_DESCUENTO_APLICADO) AS DECIMAL(10,2))
+FROM gd_esquema.Maestra
+WHERE CONCAT(TICKET_NUMERO, ' ', dbo.ExtractSucursal(SUCURSAL_NOMBRE)) IS NOT NULL AND PAGO_TIPO_MEDIO_PAGO IS NOT NULL
+GROUP BY CONCAT(TICKET_NUMERO, ' ', dbo.ExtractSucursal(SUCURSAL_NOMBRE))
+
+--NO FUNCIONA
 INSERT INTO MASTER_COOKS.Detalle_Pago(deta_cliente_documento, deta_cliente_apellido, deta_numero_tarjeta, deta_pago_id, deta_fecha_vencimiento_tarjeta, deta_cuotas)
 SELECT DISTINCT
     CAST(CLIENTE_DNI AS DECIMAL(8,0)),
     CAST(CLIENTE_APELLIDO AS VARCHAR(30)),
     CAST(PAGO_TARJETA_NRO AS VARCHAR(18)),
-	CAST(CONCAT(TICKET_NUMERO, PAGO_FECHA) AS VARCHAR(60)),
+	CAST(CONCAT(TICKET_NUMERO,' ', dbo.ExtractSucursal(SUCURSAL_NOMBRE)) AS VARCHAR(60)),
     CAST(PAGO_TARJETA_FECHA_VENC AS DATE),
     CAST(PAGO_TARJETA_CUOTAS AS DECIMAL(3,0))
 FROM gd_esquema.Maestra
-WHERE CLIENTE_APELLIDO IS NOT NULL AND CLIENTE_DNI IS NOT NULL AND PAGO_TARJETA_NRO IS NOT NULL AND CONCAT(TICKET_NUMERO, PAGO_FECHA) IS NOT NULL;
+WHERE PAGO_TARJETA_NRO IS NOT NULL AND TICKET_NUMERO IS NOT NULL AND SUCURSAL_NOMBRE IS NOT NULL;
 
-------------HASTA ACA
+INSERT INTO MASTER_COOKS.Estado_Envio (esta_descripcion)
+SELECT DISTINCT ENVIO_ESTADO
+FROM gd_esquema.Maestra
+WHERE ENVIO_ESTADO IS NOT NULL;
 
+--NO FUNCIONA
 INSERT INTO MASTER_COOKS.Envio (envi_codigo, envi_ticket_numero, envi_ticket_tipo, envi_ticket_sucursal, envi_estado_id, envi_fecha_programada, envi_horario_inicio, envi_horario_fin, envi_fecha_hora_entrega ,envi_costo)
-SELECT 
-    CAST(NEXT VALUE FOR MASTER_COOKS.seq_envio_codigo AS DECIMAL(18,0)),
+SELECT DISTINCT
+    CAST(CONCAT(TICKET_NUMERO, ENVIO_FECHA_ENTREGA) AS VARCHAR(60)),
     CAST(TICKET_NUMERO AS DECIMAL(18,0)),
     CAST(TICKET_TIPO_COMPROBANTE AS CHAR(1)),
     CAST(dbo.ExtractSucursal(SUCURSAL_NOMBRE) AS DECIMAL(6,0)),
     CAST(ENVIO_ESTADO AS VARCHAR(50)),
     CAST(ENVIO_FECHA_PROGRAMADA AS DATE),
-    CAST(ENVIO_HORA_INICIO AS TIME),
-    CAST(ENVIO_HORA_FIN AS TIME),
+    CAST(ENVIO_HORA_INICIO AS VARCHAR(2)),
+    CAST(ENVIO_HORA_FIN AS VARCHAR(2)),
     CAST(ENVIO_FECHA_ENTREGA AS DATETIME),
     CAST(ENVIO_COSTO AS DECIMAL(18,2))
 FROM gd_esquema.Maestra
-
-INSERT INTO MASTER_COOKS.Estado_Envio (esta_descripcion)
-SELECT  ENVIO_ESTADO
-FROM gd_esquema.Maestra
-WHERE ENVIO_ESTADO IS NOT NULL;
+WHERE CONCAT(TICKET_NUMERO, ENVIO_FECHA_ENTREGA) IS NOT NULL
 
 INSERT INTO MASTER_COOKS.Categoria (cate_codigo)
-SELECT 
-    CAST(PRODUCTO_CATEGORIA AS DECIMAL(8,0))
+SELECT DISTINCT
+    CAST(dbo.ExtractCategoria(PRODUCTO_CATEGORIA) AS DECIMAL(8,0))
 FROM gd_esquema.Maestra
 WHERE PRODUCTO_CATEGORIA IS NOT NULL;
 
-INSERT INTO MASTER_COOKS.Subcategoria (subc_codigo, subc_categoria_id)
-SELECT 
-    CAST(PRODUCTO_SUB_CATEGORIA AS DECIMAL(8,0)),
-    CAST(PRODUCTO_CATEGORIA AS DECIMAL(8,0))
+INSERT INTO MASTER_COOKS.Subcategoria (subc_codigo)
+SELECT DISTINCT
+    CAST(dbo.ExtractSubCategoria(PRODUCTO_SUB_CATEGORIA) AS DECIMAL(8,0))
 FROM gd_esquema.Maestra
 WHERE PRODUCTO_SUB_CATEGORIA IS NOT NULL;
 
+INSERT INTO MASTER_COOKS.Categoria_X_Subcategoria(catx_subcategoria_id, catx_categoria_id)
+SELECT DISTINCT
+    CAST(dbo.ExtractSubCategoria(PRODUCTO_SUB_CATEGORIA) AS DECIMAL(8,0)),
+    CAST(dbo.ExtractCategoria(PRODUCTO_CATEGORIA) AS DECIMAL(8,0))
+FROM gd_esquema.Maestra
+WHERE PRODUCTO_SUB_CATEGORIA IS NOT NULL and PRODUCTO_CATEGORIA IS NOT NULL;
 
 INSERT INTO MASTER_COOKS.Marca (marc_id)
-SELECT 
-    CAST(PRODUCTO_MARCA AS DECIMAL(8,0))
+SELECT DISTINCT
+    CAST(dbo.ExtractProductoMarca(PRODUCTO_MARCA) AS DECIMAL(12,0))
 FROM gd_esquema.Maestra
 WHERE PRODUCTO_MARCA IS NOT NULL;
 
 INSERT INTO MASTER_COOKS.Regla (regl_descripcion, regl_porcentaje_descuento, regl_cantidad_aplicable_regla, regl_cantidad_aplicable_descuento, regl_cantidad_max, regl_misma_marca, regl_mismo_producto)
-SELECT 
+SELECT DISTINCT
     CAST(REGLA_DESCRIPCION AS VARCHAR(50)),
     CAST(REGLA_DESCUENTO_APLICABLE_PROD AS DECIMAL(3,2)),
     CAST(REGLA_CANT_APLICABLE_REGLA AS DECIMAL(4,0)),
@@ -552,7 +575,6 @@ SELECT
     CAST(PROMOCION_FECHA_FIN AS DATE)
 FROM gd_esquema.Maestra
 WHERE PROMO_CODIGO IS NOT NULL;
-
 
 
 INSERT INTO MASTER_COOKS.Producto (prod_codigo, prod_subcategoria_id, prod_descripcion, prod_precio_unitario, prod_marca_id)
@@ -584,6 +606,7 @@ SELECT
 FROM gd_esquema.Maestra
 WHERE TICKET_TIPO_COMPROBANTE IS NOT NULL AND SUCURSAL_NOMBRE IS NOT NULL AND TICKET_NUMERO IS NOT NULL AND PRODUCTO_NOMBRE IS NOT NULL
 
+--AGREGAR SELECT INTO EN DONDE S ELLAMA A LA FUNCION DE TICK_CANTIDAD_PRODUCTOS
 
 INSERT INTO MASTER_COOKS.Promocion_X_Ticket (promx_promocion_id, promx_tick_numero, promx_tick_tipo, promx_tick_sucursal_id, promx_tick_promocion_aplicada)
 SELECT 
@@ -594,25 +617,3 @@ SELECT
     CAST(PROMO_APLICADA_DESCUENTO AS DECIMAL(10,2))
 FROM gd_esquema.Maestra
 WHERE PROMO_CODIGO IS NOT NULL AND TICKET_NUMERO  IS NOT NULL AND  TICKET_TIPO_COMPROBANTE IS NOT NULL AND SUCURSAL_NOMBRE IS NOT NULL;
-
-
-
-/*
-INSERT INTO MASTER_COOKS.Ticket(tick_vendedor_id)
-SELECT 
-    CAST(empl_legajo AS DECIMAL(6,0))
-FROM MASTER_COOKS.Empleado
-WHERE empl_legajo IS NOT NULL;
-*/
-
-
-
---funcion para calcular el monto descontado
-
-
-
-
-
-
-
-
