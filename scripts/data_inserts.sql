@@ -192,8 +192,8 @@ create table MASTER_COOKS.Regla (
     regl_cantidad_aplicable_regla decimal(4,0) null,
     regl_cantidad_aplicable_descuento decimal(4,0) null,
     regl_cantidad_max decimal(4,0) null,
-    regl_misma_marca bit null,
-    regl_mismo_producto bit null
+    regl_misma_marca varchar(1) null,
+    regl_mismo_producto varchar(1) null
 )
 
 CREATE TABLE MASTER_COOKS.Promocion (
@@ -207,12 +207,17 @@ CREATE TABLE MASTER_COOKS.Promocion (
 
 CREATE TABLE MASTER_COOKS.Producto (
     prod_codigo decimal(12,0) primary key,
-    prod_subcategoria_id decimal(8,0) null,
-    prod_descripcion varchar(50) null,
     prod_precio_unitario decimal(10,2) null,
     prod_marca_id decimal(12,0) null,
-    foreign key (prod_subcategoria_id) references MASTER_COOKS.Subcategoria(subc_codigo),
     foreign key (prod_marca_id) references MASTER_COOKS.Marca(marc_id)
+)
+
+CREATE TABLE MASTER_COOKS.Producto_X_Subcategoria (
+	prodx_producto_id decimal(12,0),
+	prodx_subcategoria_id decimal(8,0),
+	primary key (prodx_producto_id, prodx_subcategoria_id),
+	foreign key (prodx_producto_id) references MASTER_COOKS.Producto(prod_codigo),
+	foreign key (prodx_subcategoria_id) references MASTER_COOKS.Subcategoria(subc_codigo)
 )
 
 CREATE TABLE MASTER_COOKS.Rebaja_Producto (
@@ -561,13 +566,13 @@ SELECT DISTINCT
     CAST(REGLA_CANT_APLICABLE_REGLA AS DECIMAL(4,0)),
     CAST(REGLA_CANT_APLICA_DESCUENTO AS DECIMAL(4,0)),
     CAST(REGLA_CANT_MAX_PROD AS DECIMAL(4,0)),
-    CAST(REGLA_APLICA_MISMA_MARCA AS BIT),
-    CAST(REGLA_APLICA_MISMO_PROD AS BIT)
+    CAST(REGLA_APLICA_MISMA_MARCA AS VARCHAR(1)),
+    CAST(REGLA_APLICA_MISMO_PROD AS VARCHAR(1))
 FROM gd_esquema.Maestra
 WHERE REGLA_DESCRIPCION IS NOT NULL
 
 INSERT INTO MASTER_COOKS.Promocion (prom_codigo, prom_regla_id, prom_descripcion, prom_fecha_inicio, prom_fecha_fin)
-SELECT 
+SELECT DISTINCT
     CAST(PROMO_CODIGO AS DECIMAL(4,0)),
     CAST(REGLA_DESCRIPCION AS VARCHAR(50)),
     CAST(PROMOCION_DESCRIPCION AS VARCHAR(50)),
@@ -576,19 +581,23 @@ SELECT
 FROM gd_esquema.Maestra
 WHERE PROMO_CODIGO IS NOT NULL;
 
-
-INSERT INTO MASTER_COOKS.Producto (prod_codigo, prod_subcategoria_id, prod_descripcion, prod_precio_unitario, prod_marca_id)
-SELECT 
+INSERT INTO MASTER_COOKS.Producto (prod_codigo, prod_precio_unitario, prod_marca_id)
+SELECT DISTINCT
 	CAST(dbo.ExtractProductoNombre(PRODUCTO_NOMBRE) AS DECIMAL(12,0)),
-    CAST(dbo.ExtractSubCategoria(PRODUCTO_SUB_CATEGORIA) AS DECIMAL(8,0)),
-    CAST(PRODUCTO_DESCRIPCION AS VARCHAR(50)),
     CAST(PRODUCTO_PRECIO AS DECIMAL(10,2)),
-    CAST(dbo.ExtractProductoMarca(PRODUCTO_MARCA) AS DECIMAL(8,0))
+    CAST(dbo.ExtractProductoMarca(PRODUCTO_MARCA) AS DECIMAL(12,0))
 FROM gd_esquema.Maestra
 WHERE PRODUCTO_NOMBRE IS NOT NULL;
 
+INSERT INTO MASTER_COOKS.Producto_X_Subcategoria (prodx_producto_id ,prodx_subcategoria_id)
+SELECT DISTINCT
+	CAST(dbo.ExtractProductoNombre(PRODUCTO_NOMBRE) AS DECIMAL(12,0)),
+	CAST(dbo.ExtractSubCategoria(PRODUCTO_SUB_CATEGORIA) AS DECIMAL(8,0))
+FROM gd_esquema.Maestra
+WHERE PRODUCTO_NOMBRE IS NOT NULL AND PRODUCTO_SUB_CATEGORIA IS NOT NULL;
+
 INSERT INTO MASTER_COOKS.Rebaja_Producto (reba_producto_id, reba_promocion_id, reba_prod_promocion_aplicada)
-SELECT 
+SELECT DISTINCT
     CAST(dbo.ExtractProductoNombre(PRODUCTO_NOMBRE) AS DECIMAL(12,0)),
     CAST(PROMO_CODIGO AS DECIMAL(4,0)),
     CAST(PROMO_APLICADA_DESCUENTO AS DECIMAL(8,2))
@@ -596,7 +605,7 @@ FROM gd_esquema.Maestra
 WHERE PRODUCTO_NOMBRE IS NOT NULL AND PROMO_CODIGO IS NOT NULL;
 
 INSERT INTO MASTER_COOKS.Item_Ticket (item_tipo_id, item_sucursal_id, item_ticket_numero, item_producto_id, item_cantidad, item_precio)
-SELECT 
+SELECT DISTINCT
     CAST(TICKET_TIPO_COMPROBANTE AS CHAR(1)),
     CAST(dbo.ExtractSucursal(SUCURSAL_NOMBRE) AS DECIMAL(6,0)),
     CAST(TICKET_NUMERO AS DECIMAL(18,0)),
@@ -609,7 +618,7 @@ WHERE TICKET_TIPO_COMPROBANTE IS NOT NULL AND SUCURSAL_NOMBRE IS NOT NULL AND TI
 --AGREGAR SELECT INTO EN DONDE S ELLAMA A LA FUNCION DE TICK_CANTIDAD_PRODUCTOS
 
 INSERT INTO MASTER_COOKS.Promocion_X_Ticket (promx_promocion_id, promx_tick_numero, promx_tick_tipo, promx_tick_sucursal_id, promx_tick_promocion_aplicada)
-SELECT 
+SELECT DISTINCT
     CAST(PROMO_CODIGO AS DECIMAL(4,0)),
     CAST(TICKET_NUMERO AS DECIMAL(18,0)),
     CAST(TICKET_TIPO_COMPROBANTE AS CHAR(1)),
