@@ -102,9 +102,13 @@ create table MASTER_COOKS.Ticket (
 	foreign key (tick_sucursal_id) references MASTER_COOKS.Sucursal(sucu_numero)
 )
 
+create table MASTER_COOKS.Tipo_Medio_Pago (
+    tipo_id nvarchar(30) primary key
+)
 create table MASTER_COOKS.Medio_De_Pago (
     medi_descripcion nvarchar(50) primary key,
-    medi_tipo nvarchar(30) null,
+    medi_tipo nvarchar(30)
+	foreign key (medi_tipo) references MASTER_COOKS.Tipo_Medio_Pago(tipo_id)
 )
 
 create table MASTER_COOKS.Descuento_Medio_Pago(
@@ -126,11 +130,18 @@ create table MASTER_COOKS.Pago (
 	pago_ticket_tipo char(1) null,
 	pago_ticket_sucursal decimal(6,0) null,
     pago_importe decimal(18,2) null,
-	pago_monto_descontado decimal(10,2) null,
+	pago_desc_aplicado_mp decimal(10,2) null,
 	foreign key (pago_medio_de_pago_id) references MASTER_COOKS.Medio_De_Pago(medi_descripcion),
 	foreign key(pago_ticket_numero, pago_ticket_tipo, pago_ticket_sucursal) references MASTER_COOKS.Ticket(tick_numero, tick_tipo, tick_sucursal_id)
 )
 
+create table MASTER_COOKS.Descuento_Aplicado_Por_MP (
+	descx_pago_id varchar(60),
+	descx_descuento_id decimal(5,0),
+	primary key (descx_pago_id, descx_descuento_id),
+	foreign key (descx_pago_id) references MASTER_COOKS.Pago(pago_id),
+	foreign key(descx_descuento_id) references MASTER_COOKS.Descuento_Medio_Pago(desc_codigo)
+)
 
 create table MASTER_COOKS.Detalle_Pago (
 	deta_numero_tarjeta varchar(18),
@@ -251,13 +262,16 @@ create table MASTER_COOKS.Item_Ticket (
 
 create table MASTER_COOKS.Promocion_X_Ticket (
     promx_promocion_id decimal(4,0),
-    promx_tick_numero decimal(18,0),
-    promx_tick_tipo char(1),
-    promx_tick_sucursal_id decimal(6,0),
-    promx_tick_promocion_aplicada decimal(10,2),
-    primary key (promx_promocion_id, promx_tick_numero, promx_tick_tipo, promx_tick_sucursal_id, promx_tick_promocion_aplicada),
+    promx_item_tipo char(1),
+    promx_item_sucursal_id decimal(6,0),
+    promx_item_ticket_id decimal(18,0),
+	promx_item_prod_codigo decimal(12,0),
+	promx_item_prod_precio decimal(10,2),
+	promx_item_cantidad decimal(4),
+    promx_item_promocion_aplicada decimal(10,2)
+    primary key (promx_promocion_id, promx_item_tipo, promx_item_sucursal_id, promx_item_ticket_id, promx_item_prod_codigo, promx_item_prod_precio, promx_item_cantidad, promx_item_promocion_aplicada),
     foreign key (promx_promocion_id) references MASTER_COOKS.Promocion(prom_codigo),
-    foreign key (promx_tick_numero, promx_tick_tipo, promx_tick_sucursal_id) references MASTER_COOKS.Ticket(tick_numero, tick_tipo, tick_sucursal_id)
+    foreign key (promx_item_tipo, promx_item_sucursal_id, promx_item_ticket_id, promx_item_prod_codigo, promx_item_prod_precio, promx_item_cantidad) references MASTER_COOKS.Item_Ticket(item_tipo_id, item_sucursal_id, item_ticket_numero, item_producto_codigo, item_producto_precio, item_cantidad)
 )
 
 ---------FUNCTIONS
@@ -455,12 +469,19 @@ WHERE TICKET_NUMERO IS NOT NULL AND TICKET_TIPO_COMPROBANTE IS NOT NULL AND SUCU
 GROUP BY TICKET_NUMERO, TICKET_TIPO_COMPROBANTE, SUCURSAL_NOMBRE;
 
 
+INSERT INTO MASTER_COOKS.Tipo_Medio_Pago(tipo_id)
+SELECT DISTINCT 
+	CAST(PAGO_TIPO_MEDIO_PAGO AS VARCHAR(30))
+FROM gd_esquema.Maestra
+WHERE PAGO_TIPO_MEDIO_PAGO IS NOT NULL;
+
+
 INSERT INTO MASTER_COOKS.Medio_De_Pago(medi_descripcion, medi_tipo)
 SELECT DISTINCT 
 	CAST(PAGO_MEDIO_PAGO AS NVARCHAR(50)),
 	CAST(PAGO_TIPO_MEDIO_PAGO AS VARCHAR(30))
 FROM gd_esquema.Maestra
-WHERE PAGO_TIPO_MEDIO_PAGO IS NOT NULL;
+WHERE PAGO_MEDIO_PAGO IS NOT NULL;
 
 
 INSERT INTO MASTER_COOKS.Descuento_Medio_Pago(desc_codigo, desc_descripcion, desc_fecha_inicio, desc_fecha_fin, desc_porcentaje, desc_importe_tope, desc_medio_pago)
@@ -476,7 +497,7 @@ FROM gd_esquema.Maestra
 WHERE DESCUENTO_CODIGO IS NOT NULL AND PAGO_MEDIO_PAGO IS NOT NULL;
 
 
-INSERT INTO MASTER_COOKS.Pago(pago_id, pago_ticket_sucursal, pago_ticket_numero, pago_ticket_tipo, pago_medio_de_pago_id, pago_fecha, pago_importe,pago_monto_descontado)
+INSERT INTO MASTER_COOKS.Pago(pago_id, pago_ticket_sucursal, pago_ticket_numero, pago_ticket_tipo, pago_medio_de_pago_id, pago_fecha, pago_importe, pago_desc_aplicado_mp)
 SELECT DISTINCT
 	CAST(CONCAT(TICKET_NUMERO, ' ', dbo.ExtractSucursal(SUCURSAL_NOMBRE)) AS VARCHAR(60)),
     CAST(MAX(dbo.ExtractSucursal(SUCURSAL_NOMBRE)) AS DECIMAL(6,0)),
@@ -489,6 +510,14 @@ SELECT DISTINCT
 FROM gd_esquema.Maestra
 WHERE CONCAT(TICKET_NUMERO, ' ', dbo.ExtractSucursal(SUCURSAL_NOMBRE)) IS NOT NULL AND PAGO_TIPO_MEDIO_PAGO IS NOT NULL
 GROUP BY CONCAT(TICKET_NUMERO, ' ', dbo.ExtractSucursal(SUCURSAL_NOMBRE))
+
+
+INSERT INTO MASTER_COOKS.Descuento_Aplicado_Por_MP(descx_pago_id, descx_descuento_id)
+SELECT DISTINCT
+	CAST(CONCAT(TICKET_NUMERO, ' ', dbo.ExtractSucursal(SUCURSAL_NOMBRE)) AS VARCHAR(60)),
+	CAST(DESCUENTO_CODIGO AS DECIMAL(5,0))
+FROM gd_esquema.Maestra
+WHERE CONCAT(TICKET_NUMERO, ' ', dbo.ExtractSucursal(SUCURSAL_NOMBRE)) IS NOT NULL AND DESCUENTO_CODIGO IS NOT NULL;
 
 
 INSERT INTO MASTER_COOKS.Detalle_Pago(deta_cliente_documento, deta_cliente_apellido, deta_numero_tarjeta, deta_pago_id, deta_fecha_vencimiento_tarjeta, deta_cuotas)
@@ -627,12 +656,15 @@ FROM gd_esquema.Maestra
 WHERE TICKET_TIPO_COMPROBANTE IS NOT NULL AND SUCURSAL_NOMBRE IS NOT NULL AND TICKET_NUMERO IS NOT NULL AND PRODUCTO_NOMBRE IS NOT NULL AND PRODUCTO_PRECIO IS NOT NULL AND TICKET_DET_CANTIDAD IS NOT NULL;
 
 
-INSERT INTO MASTER_COOKS.Promocion_X_Ticket (promx_promocion_id, promx_tick_numero, promx_tick_tipo, promx_tick_sucursal_id, promx_tick_promocion_aplicada)
+INSERT INTO MASTER_COOKS.Promocion_X_Ticket (promx_promocion_id, promx_item_tipo, promx_item_sucursal_id, promx_item_ticket_id, promx_item_prod_codigo, promx_item_prod_precio, promx_item_cantidad, promx_item_promocion_aplicada)
 SELECT DISTINCT
     CAST(PROMO_CODIGO AS DECIMAL(4,0)),
-    CAST(TICKET_NUMERO AS DECIMAL(18,0)),
     CAST(TICKET_TIPO_COMPROBANTE AS CHAR(1)),
     CAST(dbo.ExtractSucursal(SUCURSAL_NOMBRE) AS DECIMAL(6,0)),
+    CAST(TICKET_NUMERO AS DECIMAL(18,0)),
+	CAST(dbo.ExtractProductoNombre(PRODUCTO_NOMBRE) AS DECIMAL(12,0)),
+	CAST(TICKET_DET_PRECIO AS DECIMAL(10,2)),
+	CAST(TICKET_DET_CANTIDAD AS DECIMAL(4,0)),
     CAST(PROMO_APLICADA_DESCUENTO AS DECIMAL(10,2))
 FROM gd_esquema.Maestra
-WHERE PROMO_CODIGO IS NOT NULL AND TICKET_NUMERO  IS NOT NULL AND  TICKET_TIPO_COMPROBANTE IS NOT NULL AND SUCURSAL_NOMBRE IS NOT NULL AND PROMO_APLICADA_DESCUENTO IS NOT NULL;
+WHERE PROMO_CODIGO IS NOT NULL AND TICKET_TIPO_COMPROBANTE  IS NOT NULL AND  SUCURSAL_NOMBRE IS NOT NULL AND TICKET_NUMERO IS NOT NULL AND PRODUCTO_NOMBRE IS NOT NULL AND TICKET_DET_PRECIO IS NOT NULL AND TICKET_DET_CANTIDAD IS NOT NULL AND PROMO_APLICADA_DESCUENTO IS NOT NULL;
