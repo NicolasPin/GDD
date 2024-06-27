@@ -1,160 +1,132 @@
 @startuml
 entity TIEMPO <<Dimension>>{
-**<PK> cod_mes **
---
-desc_mes
-cod_cuatrimestre
-desc_cuatrimestre
-cod_anio
-}
-
+        **id_tiempo: varchar(20)**
+        --
+        anio: char(4)
+        mes: char(2)
+        cuatrimestre: char(1)
+    }
 entity PROVINCIA <<Dimension>>{
-**<PK> cod_provincia **
---
-desc_pronvincia
-
-}
-
+        **id_provincia: varchar(60)**
+        --
+    }
 entity LOCALIDAD <<Dimension>>{
-**<PK> cod_localidad **
---
-cod_provincia
-desc_localidad
-}
+        **id_localidad: varchar(110) **
+        --
+        FK | localidad_provincia_id: varchar(60)
+        localidad_nombre: varchar(50)
 
-
-
+    }
 entity SUCURSAL <<Dimension>>{
-**<PK> numero **
---
-direccion
-cod_localidad
-provincia
-super_id
+        **id_sucursal: decimal(6,0)**
+        --
+        FK | sucursal_localidad_id: varchar(110)
+        sucursal_direccion: varchar(50)
+
+    }
+entity RANGO_ETARIO <<Dimension>>{
+        ** id_rango_etario: decimal(2,0)**
+        --
+        descripcion: varchar(50)
+    }
+entity TURNO <<Dimension>>{
+        ** id_turno: decimal(6,0) **
+        --
+        hora_inicio: datetime
+        hora_fin: datetime
+    }
+entity MEDIO_PAGO <<Dimension>> {
+        **id_medio_pago: varchar(50)**
+        --
+        tipo: varchar(30)
+    }
+
+entity CATEGORIA <<Dimension>> {
+        **id_categoria: decimal(8,0)**
+        --
+    }
+
+entity TICKET <<Dimension>> {
+        **id_ticket: varchar(50)**
+        --
+        numero_ticket: decimal(18,0)
+        tipo_ticket: char(1)
+    }
+entity CAJA <<Dimension>> {
+        **id_caja: varchar(9)**
+        --
+        numero_caja: decimal(3,0)
+        tipo_caja: varchar(50)
 }
-
-entity SEGMENTO_DE_CLIENTES_EMPPLEADOS <<Dimension>>{
-**<PK> segmento **
---
-
-}
-
-entity TURNOS <<Dimension>>{
-**<PK> cod_turnos **
---
-
-}
-
-entity MEDIO_DE_PAGO <<Dimension>>{
-**<PK> descripcion **
---
-tipo
-}
-
-entity CATEGORIA <<Dimension>>{
-**<PK> codigo **
---
-
-}
-
-entity SUBCATEGORIA <<Dimension>>{
-**<PK> codigo **
---
-
-}
-
-entity TICKETS <<Dimension>>{
-**<PK> codigoTicket **
---
-numero
-tipo
-vendedor
-caja
-fechaHora
-total
-totalEnvio
-}
-
-entity CAJA <<Dimension>>{
-**<PK> codigoCaja **
---
-numero
-sucursal
-tipo
-}
-
-entity TIPO_CAJA<<Dimension>>{
-**<PK> codigoTipo **
---
-descripcion
-}
-
-
 entity VENTAS <<Facts>>{
-**<PK> cod_mes **
-**<PK> cod_localidad **
-**<PK> cod_turnos **
-**<PK> segmento **
-**<PK> codigoTicket **
-**<PK> codigoCaja **
-**<PK> codigoTipo **
---
+        **PK,FK | id_tiempo: varchar(20)**
+        **PK,FK | id_sucursal: decimal(6,0)**
+        **PK,FK | id_rango_etario: decimal(2,0)**
+        **PK,FK | id_turno: decimal(6,0)**
+        **PK,FK | id_medio_pago: varchar(50)**
+        **PK,FK | id_categoria: decimal(8,0)**
+        **PK,FK | id_ticket: varchar(25)**
+        **PK,FK | id_caja: varchar(9)**
+        --
+        importe_total: decimal(12,2)
+        cantidad_unidades: decimal(12,0)
 
-}
+    }
+entity DESCUENTO <<Facts>>{
+        **PK,FK | id_ticket: varchar(25)**
+        **PK,FK | id_categoria: decimal(8,0)**
+        **PK,FK | id_tiempo: varchar(20)**
+        **PK,FK | id_medio_pago: varchar(50)**
+        --
+        monto_descuento: decimal(12,2)
+        tipo_descuento: varchar(30)
 
+    }
 entity ENVIO <<Facts>>{
+        **PK,FK | id_tiempo: varchar(20)**
+        **PK,FK | id_sucursal: decimal(6,0)**
+        **PK,FK | id_rango_etario: decimal(2,0)**
+        --
+        costo_envio: decimal(12,2)
+        cumplimiento_tiempo: decimal(3,2)
 
---
+    }
+entity CUOTAS <<Facts>>{
+        varchar(25) id_ticket PK,FK
+        varchar(20) id_tiempo PK,FK
+        decimal(6,0) id_sucursal PK,FK
+        decimal(2,0) id_rango_etario PK,FK
+        varchar(50) id_medio_pago PK,FK
+        int numero_cuotas
+        decimal(12,2) importe_cuota
+        decimal(12,2) importe_total
+    }
 
-}
+RANGO_ETARIO ||----o{ VENTAS
+TIEMPO ||-----o{ VENTAS
+SUCURSAL ||-----o{ VENTAS
+TURNO ||-----o{ VENTAS
+MEDIO_PAGO ||-----o{ VENTAS
+CATEGORIA ||-----o{ VENTAS
+TICKET ||----o{ VENTAS
+CAJA ||-----o{ VENTAS
 
-entity DESCUENTOS <<Facts>>{
+CATEGORIA ||---o{ ENVIO
+TIEMPO ||----o{ ENVIO
+SUCURSAL ||---o{ ENVIO
+RANGO_ETARIO ||----o{ ENVIO
 
---
+PROVINCIA ||--o{ LOCALIDAD
+LOCALIDAD ||--o{ SUCURSAL
 
-}
+TIEMPO ||----o{ DESCUENTO
+TICKET ||----o{ DESCUENTO
+MEDIO_PAGO ||----o{ DESCUENTO
 
-entity PAGO <<Facts>>{
+TICKET ||----o{ CUOTAS
+TIEMPO ||----o{ CUOTAS
+SUCURSAL ||----o{ CUOTAS
+RANGO_ETARIO ||----o{ CUOTAS
+MEDIO_PAGO||----o{ CUOTAS
 
---
-
-}
-
-
-entity pc_placas_video <<Bridge>>{
-
-}
-
-entity pc_discos_rigidos <<Bridge>>{
-
-}
-
-entity pc_memorias_ram <<Bridge>>{
-
-}
-COMPRAS_ACCESORIO ||--|| sucursales
-COMPRAS_ACCESORIO ||--|| accesorios
-COMPRAS_ACCESORIO ||--|| tiempos
-
-VENTAS_ACCESORIO ||--|| sucursales
-VENTAS_ACCESORIO ||--|| accesorios
-VENTAS_ACCESORIO ||--|| tiempos
-
-
-COMPRAS_PC ||--|| sucursales
-COMPRAS_PC ||--|| pcs
-COMPRAS_PC ||--|| tiempos
-
-pcs ||--|| procesadores
-pcs ||--{ pc_placas_video
-pcs ||--{ pc_discos_rigidos
-pcs ||--{ pc_memorias_ram
-
-placas_video ||--{ pc_placas_video
-discos_rigidos ||--{ pc_discos_rigidos
-memorias_ram ||--{ pc_memorias_ram
-
-VENTAS_PC ||--|| sucursales
-VENTAS_PC ||--|| pcs
-VENTAS_PC ||--|| tiempos
 @enduml

@@ -1,0 +1,152 @@
+@startuml
+entity tiempos <<Dimension>>{
+**<PK> CODIGO_TIEMPO int IDENTITY PRIMARY KEY**
+--
+AÑO int
+MES int
+}
+
+entity sucursales <<Dimension>>{
+**PK CODIGO_SUCURSAL int**
+--
+DIR nvarchar(255)
+MAIL nvarchar(255)
+TELEFONO decimal(18,0)
+CIUDAD nvarchar(255)
+}
+
+entity pcs <<Dimension>>{
+**<PK>  PC_CODIGO nvarchar(50)**
+--
+ALTO decimal (18,2)
+ANCHO decimal (18,2)
+PROFUNDIDAD decimal (18,2)
+<FK> MICROPROCESADOR_CODIGO nvarchar(50)
+}
+
+entity discos_rigidos <<Dimension>>{
+**<PK> DISCO_RIGIDO_CODIGO nvarchar(255)**
+--
+TIPO nvarchar(255)
+CAPACIDAD nvarchar(255)
+VELOCIDAD nvarchar(255)
+FABRICANTE nvarchar(255)
+}
+
+entity procesadores <<Dimension>>{
+**<PK> MICROPROCESADOR_CODIGO nvarchar(50)**
+--
+CANTIDAD_HILOS decimal(18,0)
+CACHE nvarchar(50)
+VELOCIDAD nvarchar(50)
+FABRICANTE nvarchar(255)
+}
+
+entity memorias_ram <<Dimension>>{
+**<PK>  MEMORIA_RAM_CODIGO nvarchar(255)**
+--
+TIPO nvarchar(255)
+VELOCIDAD nvarchar(255)
+CAPACIDAD nvarchar(255)
+FABRICANTE nvarchar(255)
+}
+
+entity placas_video <<Dimension>>{
+**<PK> PLACA_VIDEO_CODIGO  decimal(18,0)**
+--
+MODELO_PLACA_VIDEO  nvarchar(50)
+CHIPSET nvarchar(50)
+CAPACIDAD nvarchar(255)
+VELOCIDAD nvarchar(50)
+FABRICANTE nvarchar(255)
+}
+
+entity accesorios <<Dimension>>{
+**<PK>  CODIGO_ACCESORIO decimal(18,0)**
+--
+DESCRIPCION nvarchar(255)
+}
+
+entity pc_placas_video <<Bridge>>{
+**<PK> PLACA_VIDEO_CODIGO  decimal(18,0)**
+**<PK><FK> PC_CODIGO nvarchar(50)**
+}
+
+entity pc_discos_rigidos <<Bridge>>{
+**<PK> DISCO_RIGIDO_CODIGO  nvarchar(255)**
+**<PK><FK> PC_CODIGO nvarchar(50)**
+}
+
+entity pc_memorias_ram <<Bridge>>{
+**<PK> MEMORIA_RAM_CODIGO  nvarchar(255)**
+**<PK><FK> PC_CODIGO nvarchar(50)**
+}
+
+entity COMPRAS_ACCESORIO <<Facts>>{
+**<PK><FK> CODIGO_ACCESORIO decimal(18,0)**
+**<PK><FK> CODIGO_SUCURSAL int**
+**<PK><FK> CODIGO_TIEMPO int**
+--
+CANTIDAD decimal(18,0)
+PROMEDIO_PRECIO_COMPRA decimal(18,2)
+}
+
+entity COMPRAS_PC <<Facts>>{
+**<PK><FK> PC_CODIGO nvarchar(50)**
+**<PK><FK> CODIGO_SUCURSAL int**
+**<PK><FK> CODIGO_TIEMPO int**
+--
+CANTIDAD decimal(18,0)
+PROMEDIO_PRECIO_COMPRA decimal(18,2)
+}
+
+entity VENTAS_ACCESORIO <<Facts>>{
+**<PK><FK> CODIGO_ACCESORIO decimal(18,0)**
+**<PK><FK> CODIGO_SUCURSAL int**
+**<PK><FK> CODIGO_TIEMPO int**
+--
+CANTIDAD decimal(18,0)
+PROMEDIO_PRECIO_VENTA decimal(18,2)
+PROMEDIO_DIAS_EN_STOCK decimal(18,2)
+RANGO_EDAD_CLIENTES varchar(10)
+SEXO_MAYORITARIO_CLIENTES varchar(20)
+}
+
+entity VENTAS_PC <<Facts>>{
+**<PK><FK> PC_CODIGO nvarchar(50)**
+**<PK><FK> CODIGO_SUCURSAL int**
+**<PK><FK> CODIGO_TIEMPO int**
+--
+CANTIDAD decimal(18,0)
+PROMEDIO_PRECIO_VENTA decimal(18,2)
+PROMEDIO_DIAS_EN_STOCK decimal(18,2)
+RANGO_EDAD_CLIENTES varchar(10)
+SEXO_MAYORITARIO_CLIENTES varchar(20)
+}
+
+COMPRAS_ACCESORIO ||--|| sucursales
+COMPRAS_ACCESORIO ||--|| accesorios
+COMPRAS_ACCESORIO ||--|| tiempos
+
+VENTAS_ACCESORIO ||--|| sucursales
+VENTAS_ACCESORIO ||--|| accesorios
+VENTAS_ACCESORIO ||--|| tiempos
+
+
+COMPRAS_PC ||--|| sucursales
+COMPRAS_PC ||--|| pcs
+COMPRAS_PC ||--|| tiempos
+
+pcs ||--|| procesadores
+pcs ||--{ pc_placas_video
+pcs ||--{ pc_discos_rigidos
+pcs ||--{ pc_memorias_ram
+
+placas_video ||--{ pc_placas_video
+discos_rigidos ||--{ pc_discos_rigidos
+memorias_ram ||--{ pc_memorias_ram
+
+VENTAS_PC ||--|| sucursales
+VENTAS_PC ||--|| pcs
+VENTAS_PC ||--|| tiempos
+@enduml
