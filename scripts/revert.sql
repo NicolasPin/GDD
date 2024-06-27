@@ -36,3 +36,22 @@ DROP FUNCTION IF EXISTS dbo.ExtractProductoMarca;
 DROP FUNCTION IF EXISTS dbo.ExtractCategoria;
 
 DROP SCHEMA IF EXISTS MASTER_COOKS;
+-------------------------
+
+DROP TABLE IF EXISTS dbo.BI_Dim_Caja;
+DROP TABLE IF EXISTS dbo.BI_Dim_Ticket;
+DROP TABLE IF EXISTS dbo.BI_Dim_Categoria;
+DROP TABLE IF EXISTS dbo.BI_Dim_Rango_Etario;
+DROP TABLE IF EXISTS dbo.BI_Dim_Tiempo;
+DROP TABLE IF EXISTS dbo.BI_Dim_Turno;
+DROP TABLE IF EXISTS dbo.BI_Fact_Coutas;
+DROP TABLE IF EXISTS dbo.BI_Fact_Ventas;
+DROP TABLE IF EXISTS dbo.BI_Fact_Envio;
+DROP TABLE IF EXISTS dbo.BI_Dim_Medio_Pago;
+DROP TABLE IF EXISTS dbo.BI_Fact_Descuento;
+DROP TABLE IF EXISTS dbo.BI_Dim_Sucursal;
+DROP TABLE IF EXISTS dbo.BI_Dim_Localidad;
+DROP TABLE IF EXISTS dbo.BI_Dim_Provincia;
+
+
+
