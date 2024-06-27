@@ -53,7 +53,7 @@ entity TICKET <<Dimension>> {
         tipo_ticket: char(1)
     }
 entity CAJA <<Dimension>> {
-        **id_caja: varchar(9)**
+        **id_caja: varchar(100)**
         --
         numero_caja: decimal(3,0)
         tipo_caja: varchar(50)
