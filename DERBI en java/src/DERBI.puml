@@ -1,0 +1,160 @@
+@startuml
+entity TIEMPO <<Dimension>>{
+**<PK> cod_mes **
+--
+desc_mes
+cod_cuatrimestre
+desc_cuatrimestre
+cod_anio
+}
+
+entity PROVINCIA <<Dimension>>{
+**<PK> cod_provincia **
+--
+desc_pronvincia
+
+}
+
+entity LOCALIDAD <<Dimension>>{
+**<PK> cod_localidad **
+--
+cod_provincia
+desc_localidad
+}
+
+
+
+entity SUCURSAL <<Dimension>>{
+**<PK> numero **
+--
+direccion
+cod_localidad
+provincia
+super_id
+}
+
+entity SEGMENTO_DE_CLIENTES_EMPPLEADOS <<Dimension>>{
+**<PK> segmento **
+--
+
+}
+
+entity TURNOS <<Dimension>>{
+**<PK> cod_turnos **
+--
+
+}
+
+entity MEDIO_DE_PAGO <<Dimension>>{
+**<PK> descripcion **
+--
+tipo
+}
+
+entity CATEGORIA <<Dimension>>{
+**<PK> codigo **
+--
+
+}
+
+entity SUBCATEGORIA <<Dimension>>{
+**<PK> codigo **
+--
+
+}
+
+entity TICKETS <<Dimension>>{
+**<PK> codigoTicket **
+--
+numero
+tipo
+vendedor
+caja
+fechaHora
+total
+totalEnvio
+}
+
+entity CAJA <<Dimension>>{
+**<PK> codigoCaja **
+--
+numero
+sucursal
+tipo
+}
+
+entity TIPO_CAJA<<Dimension>>{
+**<PK> codigoTipo **
+--
+descripcion
+}
+
+
+entity VENTAS <<Facts>>{
+**<PK> cod_mes **
+**<PK> cod_localidad **
+**<PK> cod_turnos **
+**<PK> segmento **
+**<PK> codigoTicket **
+**<PK> codigoCaja **
+**<PK> codigoTipo **
+--
+
+}
+
+entity ENVIO <<Facts>>{
+
+--
+
+}
+
+entity DESCUENTOS <<Facts>>{
+
+--
+
+}
+
+entity PAGO <<Facts>>{
+
+--
+
+}
+
+
+entity pc_placas_video <<Bridge>>{
+
+}
+
+entity pc_discos_rigidos <<Bridge>>{
+
+}
+
+entity pc_memorias_ram <<Bridge>>{
+
+}
+COMPRAS_ACCESORIO ||--|| sucursales
+COMPRAS_ACCESORIO ||--|| accesorios
+COMPRAS_ACCESORIO ||--|| tiempos
+
+VENTAS_ACCESORIO ||--|| sucursales
+VENTAS_ACCESORIO ||--|| accesorios
+VENTAS_ACCESORIO ||--|| tiempos
+
+
+COMPRAS_PC ||--|| sucursales
+COMPRAS_PC ||--|| pcs
+COMPRAS_PC ||--|| tiempos
+
+pcs ||--|| procesadores
+pcs ||--{ pc_placas_video
+pcs ||--{ pc_discos_rigidos
+pcs ||--{ pc_memorias_ram
+
+placas_video ||--{ pc_placas_video
+discos_rigidos ||--{ pc_discos_rigidos
+memorias_ram ||--{ pc_memorias_ram
+
+VENTAS_PC ||--|| sucursales
+VENTAS_PC ||--|| pcs
+VENTAS_PC ||--|| tiempos
+@enduml
