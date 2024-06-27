@@ -37,21 +37,33 @@ DROP FUNCTION IF EXISTS dbo.ExtractCategoria;
 
 DROP SCHEMA IF EXISTS MASTER_COOKS;
 -------------------------
+-- Eliminar vistas
+DROP VIEW IF EXISTS BI_VW_TicketPromedioMensual;
+DROP VIEW IF EXISTS BI_VW_UnidadesPromedioPorTurno;
+DROP VIEW IF EXISTS BI_VW_PorcentajeVentasRangoEtarioCliente;
+DROP VIEW IF EXISTS BI_VW_VentasPorTurnoLocalidad;
 
-DROP TABLE IF EXISTS dbo.BI_Dim_Caja;
-DROP TABLE IF EXISTS dbo.BI_Dim_Ticket;
-DROP TABLE IF EXISTS dbo.BI_Dim_Categoria;
-DROP TABLE IF EXISTS dbo.BI_Dim_Rango_Etario;
-DROP TABLE IF EXISTS dbo.BI_Dim_Tiempo;
-DROP TABLE IF EXISTS dbo.BI_Dim_Turno;
-DROP TABLE IF EXISTS dbo.BI_Fact_Coutas;
-DROP TABLE IF EXISTS dbo.BI_Fact_Ventas;
-DROP TABLE IF EXISTS dbo.BI_Fact_Envio;
-DROP TABLE IF EXISTS dbo.BI_Dim_Medio_Pago;
-DROP TABLE IF EXISTS dbo.BI_Fact_Descuento;
-DROP TABLE IF EXISTS dbo.BI_Dim_Sucursal;
-DROP TABLE IF EXISTS dbo.BI_Dim_Localidad;
-DROP TABLE IF EXISTS dbo.BI_Dim_Provincia;
+-- Eliminar tablas de hechos
+DROP TABLE IF EXISTS BI_Fact_Cuotas;
+DROP TABLE IF EXISTS BI_Fact_Envio;
+DROP TABLE IF EXISTS BI_Fact_Descuento;
+DROP TABLE IF EXISTS BI_Fact_Ventas;
+
+-- Eliminar dimensiones
+DROP TABLE IF EXISTS BI_Dim_Caja;
+DROP TABLE IF EXISTS BI_Dim_Ticket;
+DROP TABLE IF EXISTS BI_Dim_Categoria;
+DROP TABLE IF EXISTS BI_Dim_Medio_Pago;
+DROP TABLE IF EXISTS BI_Dim_Turno;
+DROP TABLE IF EXISTS BI_Dim_Rango_Etario;
+DROP TABLE IF EXISTS BI_Dim_Sucursal;
+DROP TABLE IF EXISTS BI_Dim_Localidad;
+DROP TABLE IF EXISTS BI_Dim_Provincia;
+DROP TABLE IF EXISTS BI_Dim_Tiempo;
+
+
+
+
 
 
 
