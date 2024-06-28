@@ -164,7 +164,7 @@ create table MASTER_COOKS.Envio (
     envi_ticket_numero decimal(18,0) null,
 	envi_ticket_tipo char(1) null,
 	envi_ticket_sucursal decimal(6,0) null,
-    envi_fecha_programada date null,
+    envi_fecha_programada datetime null,
     envi_horario_inicio varchar(2) null,
     envi_horario_fin varchar(2) null,
     envi_fecha_hora_entrega datetime null,
@@ -545,7 +545,7 @@ SELECT DISTINCT
     CAST(TICKET_TIPO_COMPROBANTE AS CHAR(1)),
     CAST(dbo.ExtractSucursal(SUCURSAL_NOMBRE) AS DECIMAL(6,0)),
     CAST(ENVIO_ESTADO AS VARCHAR(50)),
-    CAST(ENVIO_FECHA_PROGRAMADA AS DATE),
+    CAST(ENVIO_FECHA_PROGRAMADA AS DATETIME),
     CAST(ENVIO_HORA_INICIO AS VARCHAR(2)),
     CAST(ENVIO_HORA_FIN AS VARCHAR(2)),
     CAST(ENVIO_FECHA_ENTREGA AS DATETIME),
@@ -668,3 +668,24 @@ SELECT DISTINCT
     CAST(PROMO_APLICADA_DESCUENTO AS DECIMAL(10,2))
 FROM gd_esquema.Maestra
 WHERE PROMO_CODIGO IS NOT NULL AND TICKET_TIPO_COMPROBANTE  IS NOT NULL AND  SUCURSAL_NOMBRE IS NOT NULL AND TICKET_NUMERO IS NOT NULL AND PRODUCTO_NOMBRE IS NOT NULL AND TICKET_DET_PRECIO IS NOT NULL AND TICKET_DET_CANTIDAD IS NOT NULL AND PROMO_APLICADA_DESCUENTO IS NOT NULL;
+
+SELECT 
+    COUNT(DISTINCT envi_codigo) AS cantidad_envios,
+    CAST(tick_fecha_hora AS date) AS fecha,
+    DATEDIFF(YEAR, clie_fecha_nacimiento, CAST(tick_fecha_hora AS date)) AS DIFERENCIA
+FROM 
+    MASTER_COOKS.Ticket 
+JOIN 
+    MASTER_COOKS.Cliente 
+ON 
+    CAST(clie_documento AS varchar) + CAST(clie_apellido AS varchar) = CAST(tick_cliente_documento AS varchar) + CAST(tick_cliente_apellido AS varchar)
+JOIN 
+    MASTER_COOKS.Envio 
+ON 
+    CAST(envi_ticket_numero AS varchar) + CAST(envi_ticket_sucursal AS varchar) + CAST(envi_ticket_tipo AS varchar) = 
+    CAST(tick_numero AS varchar) + CAST(tick_sucursal_id AS varchar) + CAST(tick_tipo AS varchar)
+WHERE 
+    MONTH(tick_fecha_hora) BETWEEN 1 AND 4 
+    AND DATEDIFF(YEAR, clie_fecha_nacimiento, CAST(tick_fecha_hora AS date)) < 25
+GROUP BY 
+    CAST(tick_fecha_hora AS date), clie_fecha_nacimiento;

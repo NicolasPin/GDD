@@ -95,11 +95,11 @@ CREATE TABLE BI_Fact_Envio (
     id_tiempo VARCHAR(20) FOREIGN KEY REFERENCES BI_Dim_Tiempo(id_tiempo),
     id_sucursal DECIMAL(6,0) FOREIGN KEY REFERENCES BI_Dim_Sucursal(id_sucursal),
     id_rango_etario DECIMAL(2,0) FOREIGN KEY REFERENCES BI_Dim_Rango_Etario(id_rango_etario),
-    costo_envio DECIMAL(12,2),
-    cumplimiento_tiempo DECIMAL(3,2),
+    costo_envio_total DECIMAL(12,2),
+    cantidad_envios INT,
+    envios_cumplidos INT,
     PRIMARY KEY (id_tiempo, id_sucursal, id_rango_etario)
 );
-
 -- Tabla de Hechos Cuotas
 CREATE TABLE BI_Fact_Cuotas (
     id_ticket VARCHAR(50) FOREIGN KEY REFERENCES BI_Dim_Ticket(id_ticket),
@@ -248,7 +248,7 @@ GROUP BY
     p.pago_medio_de_pago_id;
 
 -- Poblar Fact_Envio
-INSERT INTO BI_Fact_Envio (id_tiempo, id_sucursal, id_rango_etario, costo_envio, cumplimiento_tiempo)
+INSERT INTO BI_Fact_Envio (id_tiempo, id_sucursal, id_rango_etario, costo_envio_total, cantidad_envios, envios_cumplidos)
 SELECT 
     CONCAT(YEAR(t.tick_fecha_hora), RIGHT('0' + CAST(MONTH(t.tick_fecha_hora) AS VARCHAR(2)), 2)) as id_tiempo,
     e.envi_ticket_sucursal as id_sucursal,
@@ -258,8 +258,9 @@ SELECT
         WHEN DATEDIFF(YEAR, c.clie_fecha_nacimiento, t.tick_fecha_hora) BETWEEN 35 AND 50 THEN 3
         ELSE 4
     END as id_rango_etario,
-    AVG(e.envi_costo) as costo_envio,
-    AVG(CASE WHEN e.envi_fecha_hora_entrega <= e.envi_fecha_programada THEN 1.00 ELSE 0.00 END) as cumplimiento_tiempo
+    SUM(e.envi_costo) as costo_envio_total,
+    COUNT(*) as cantidad_envios,
+    SUM(CASE WHEN e.envi_fecha_hora_entrega is not null THEN 1 ELSE 0 END) as envios_cumplidos
 FROM MASTER_COOKS.Envio e
 JOIN MASTER_COOKS.Ticket t ON e.envi_ticket_numero = t.tick_numero AND e.envi_ticket_tipo = t.tick_tipo AND e.envi_ticket_sucursal = t.tick_sucursal_id
 JOIN MASTER_COOKS.Cliente c ON t.tick_cliente_documento = c.clie_documento AND t.tick_cliente_apellido = c.clie_apellido
@@ -372,6 +373,7 @@ JOIN BI_Dim_Tiempo dt ON fd.id_tiempo = dt.id_tiempo
 JOIN BI_Fact_Ventas fv ON fd.id_ticket = fv.id_ticket AND fd.id_tiempo = fv.id_tiempo
 GROUP BY dt.anio, dt.mes;
 GO
+
 -- 6. Las tres categorías de productos con mayor descuento aplicado
 CREATE VIEW BI_VW_TopCategoriasDescuento AS
 WITH CategoriaDescuento AS (
@@ -396,10 +398,9 @@ SELECT
     dt.anio,
     dt.mes,
     fe.id_sucursal,
-    AVG(fe.cumplimiento_tiempo) * 100 AS porcentaje_cumplimiento
+    CAST(fe.envios_cumplidos AS FLOAT) / CAST(fe.cantidad_envios AS FLOAT) * 100 AS porcentaje_cumplimiento
 FROM BI_Fact_Envio fe
-JOIN BI_Dim_Tiempo dt ON fe.id_tiempo = dt.id_tiempo
-GROUP BY dt.anio, dt.mes, fe.id_sucursal;
+JOIN BI_Dim_Tiempo dt ON fe.id_tiempo = dt.id_tiempo;
 GO
 -- 8. Cantidad de envíos por rango etario de clientes
 CREATE VIEW BI_VW_EnviosPorRangoEtario AS
@@ -407,7 +408,7 @@ SELECT
     dt.anio,
     dt.cuatrimestre,
     dre.descripcion AS rango_etario,
-    COUNT(*) AS cantidad_envios
+    sum(fe.cantidad_envios) AS cantidad_envios
 FROM BI_Fact_Envio fe
 JOIN BI_Dim_Tiempo dt ON fe.id_tiempo = dt.id_tiempo
 JOIN BI_Dim_Rango_Etario dre ON fe.id_rango_etario = dre.id_rango_etario
@@ -418,8 +419,8 @@ CREATE VIEW BI_VW_Top5LocalidadesCostoEnvio AS
 WITH LocalidadCostoEnvio AS (
     SELECT
         dl.localidad_nombre,
-        SUM(fe.costo_envio) AS total_costo_envio,
-        ROW_NUMBER() OVER (ORDER BY SUM(fe.costo_envio) DESC) AS rn
+        SUM(fe.costo_envio_total) AS total_costo_envio,
+        ROW_NUMBER() OVER (ORDER BY SUM(fe.costo_envio_total) DESC) AS rn
     FROM BI_Fact_Envio fe
     JOIN BI_Dim_Sucursal ds ON fe.id_sucursal = ds.id_sucursal
     JOIN BI_Dim_Localidad dl ON ds.sucursal_localidad_id = dl.id_localidad
@@ -431,23 +432,18 @@ WHERE rn <= 5;
 GO
 -- 10. Las 3 sucursales con el mayor importe de pagos en cuotas
 CREATE VIEW BI_VW_Top3SucursalesPagosCuotas AS
-WITH SucursalPagosCuotas AS (
-    SELECT
+SELECT TOP 3
         dt.anio,
         dt.mes,
         fc.id_sucursal,
         dmp.id_medio_pago,
-        SUM(fc.importe_total) AS total_pagos_cuotas,
-        ROW_NUMBER() OVER (PARTITION BY dt.anio, dt.mes, dmp.id_medio_pago ORDER BY SUM(fc.importe_total) DESC) AS rn
+        SUM(fc.importe_total) AS total_pagos_cuotas
     FROM BI_Fact_Cuotas fc
     JOIN BI_Dim_Tiempo dt ON fc.id_tiempo = dt.id_tiempo
     JOIN BI_Dim_Medio_Pago dmp ON fc.id_medio_pago = dmp.id_medio_pago
     WHERE fc.numero_cuotas > 1
-    GROUP BY dt.anio, dt.mes, fc.id_sucursal, dmp.id_medio_pago
-)
-SELECT anio, mes, id_sucursal, id_medio_pago, total_pagos_cuotas
-FROM SucursalPagosCuotas
-WHERE rn <= 3;
+    GROUP BY dt.anio, dt.mes, fc.id_sucursal, dmp.id_medio_pago, fc.numero_cuotas
+	order by fc.numero_cuotas
 GO
 -- 11. Promedio de importe de la cuota en función del rango etareo del cliente
 CREATE VIEW BI_VW_PromedioImporteCuotaPorRangoEtario AS
@@ -464,22 +460,24 @@ SELECT
     dt.anio,
     dt.cuatrimestre,
     dmp.id_medio_pago,
-    SUM(fd.monto_descuento) * 100.0 / SUM(fv.importe_total) AS porcentaje_descuento
+     SUM(fv.importe_total) / SUM(fd.monto_descuento) * 100.0  AS porcentaje_descuento
 FROM BI_Fact_Descuento fd
 JOIN BI_Dim_Tiempo dt ON fd.id_tiempo = dt.id_tiempo
 JOIN BI_Dim_Medio_Pago dmp ON fd.id_medio_pago = dmp.id_medio_pago
 JOIN BI_Fact_Ventas fv ON fd.id_ticket = fv.id_ticket AND fd.id_tiempo = fv.id_tiempo
 GROUP BY dt.anio, dt.cuatrimestre, dmp.id_medio_pago;
 
-SELECT * FROM dbo.BI_VW_CumplimientoEnvios --VER EL PORCENTAJE DE CUMPLIMIENTO POR QUE EN TODAS DA CERO
+SELECT * FROM dbo.BI_VW_CumplimientoEnvios --PARECE QUE ESTA TODO OK
 SELECT * FROM [dbo].[BI_VW_EnviosPorRangoEtario] --PARECE TODO OK
 SELECT * FROM [dbo].[BI_VW_PorcentajeDescuentoAplicado] --FALTA MES 12
 SELECT * FROM [dbo].[BI_VW_PorcentajeDescuentoPorMedioPago] --PARECE TODO OK
 SELECT * FROM [dbo].[BI_VW_PorcentajeVentasRangoEtarioCliente] --PARECE TODO OK
 SELECT * FROM [dbo].[BI_VW_PromedioImporteCuotaPorRangoEtario] --PARECE TODO OK
-SELECT * FROM [dbo].[BI_VW_TicketPromedioMensual] --VER QUE ONDA QUE SIEMPRE ES LA MISMA LOCALIDAD
-SELECT * FROM [dbo].[BI_VW_Top3SucursalesPagosCuotas] --FALTA MES 12
-SELECT * FROM [dbo].[BI_VW_Top5LocalidadesCostoEnvio] --SOLO TIRA UNA LOCALIDAD
+SELECT * FROM [dbo].[BI_VW_TicketPromedioMensual] --VER QUE ONDA QUE SIEMPRE ES LA MISMA LOCALIDAD (tal vez hay que tomar la localida del cliente y no de la sucursal, ya que todas las sucursales estan en la misma localidad anda a saber por que)
+SELECT * FROM [dbo].[BI_VW_Top3SucursalesPagosCuotas] --no tira el top 3 bien
+SELECT * FROM [dbo].[BI_VW_Top5LocalidadesCostoEnvio] --SOLO TIRA UNA LOCALIDAD (tal vez hay que tomar la localida del cliente y no de la sucursal, ya que todas las sucursales estan en la misma localidad anda a saber por que)
 SELECT * FROM [dbo].[BI_VW_TopCategoriasDescuento] --PARECE TODO OK
-SELECT * FROM [dbo].[BI_VW_UnidadesPromedioPorTurno] --PARECE TODO OK
-SELECT * FROM [dbo].[BI_VW_VentasPorTurnoLocalidad] --SOLO SALE UNA LOCALIDAD
+SELECT * FROM [dbo].[BI_VW_UnidadesPromedioPorTurno] --ver si hay que diferenciar por cuatrimestre tambien o solo por turno
+SELECT * FROM [dbo].[BI_VW_VentasPorTurnoLocalidad] --SOLO SALE UNA LOCALIDAD (tal vez hay que tomar la localida del cliente y no de la sucursal, ya que todas las sucursales estan en la misma localidad anda a saber por que)
+
+

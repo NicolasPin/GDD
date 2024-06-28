@@ -38,10 +38,20 @@ DROP FUNCTION IF EXISTS dbo.ExtractCategoria;
 DROP SCHEMA IF EXISTS MASTER_COOKS;
 -------------------------
 -- Eliminar vistas
-DROP VIEW IF EXISTS BI_VW_TicketPromedioMensual;
-DROP VIEW IF EXISTS BI_VW_UnidadesPromedioPorTurno;
-DROP VIEW IF EXISTS BI_VW_PorcentajeVentasRangoEtarioCliente;
+
+DROP VIEW IF EXISTS BI_VW_PorcentajeDescuentoPorMedioPago;
+DROP VIEW IF EXISTS BI_VW_PromedioImporteCuotaPorRangoEtario;
+DROP VIEW IF EXISTS BI_VW_Top3SucursalesPagosCuotas;
+DROP VIEW IF EXISTS BI_VW_Top5LocalidadesCostoEnvio;
+DROP VIEW IF EXISTS BI_VW_EnviosPorRangoEtario;
+DROP VIEW IF EXISTS BI_VW_CumplimientoEnvios;
+DROP VIEW IF EXISTS BI_VW_TopCategoriasDescuento;
+DROP VIEW IF EXISTS BI_VW_PorcentajeDescuentoAplicado;
 DROP VIEW IF EXISTS BI_VW_VentasPorTurnoLocalidad;
+DROP VIEW IF EXISTS BI_VW_PorcentajeVentasRangoEtarioCliente;
+DROP VIEW IF EXISTS BI_VW_UnidadesPromedioPorTurno;
+DROP VIEW IF EXISTS BI_VW_TicketPromedioMensual;
+
 
 -- Eliminar tablas de hechos
 DROP TABLE IF EXISTS BI_Fact_Cuotas;
@@ -60,10 +70,3 @@ DROP TABLE IF EXISTS BI_Dim_Sucursal;
 DROP TABLE IF EXISTS BI_Dim_Localidad;
 DROP TABLE IF EXISTS BI_Dim_Provincia;
 DROP TABLE IF EXISTS BI_Dim_Tiempo;
-
-
-
-
-
-
-
