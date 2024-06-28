@@ -49,6 +49,7 @@ entity CATEGORIA <<Dimension>> {
 entity TICKET <<Dimension>> {
         **id_ticket: varchar(50)**
         --
+        FK | id_sucursal: decimal(6,0)
         numero_ticket: decimal(18,0)
         tipo_ticket: char(1)
     }
@@ -92,16 +93,18 @@ entity ENVIO <<Facts>>{
 
     }
 entity CUOTAS <<Facts>>{
-        varchar(25) id_ticket PK,FK
-        varchar(20) id_tiempo PK,FK
-        decimal(6,0) id_sucursal PK,FK
-        decimal(2,0) id_rango_etario PK,FK
-        varchar(50) id_medio_pago PK,FK
+        ** PK,FK | varchar(25) id_ticket**
+        ** PK,FK | varchar(20) id_tiempo**
+        ** PK,FK | decimal(6,0) id_sucursal**
+        ** PK,FK | decimal(2,0) id_rango_etario**
+        ** PK,FK | varchar(50) id_medio_pago **
+        --
         int numero_cuotas
         decimal(12,2) importe_cuota
         decimal(12,2) importe_total
     }
 
+TICKET ||-o{ SUCURSAL
 RANGO_ETARIO ||----o{ VENTAS
 TIEMPO ||-----o{ VENTAS
 SUCURSAL ||-----o{ VENTAS
