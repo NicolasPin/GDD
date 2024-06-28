@@ -669,23 +669,4 @@ SELECT DISTINCT
 FROM gd_esquema.Maestra
 WHERE PROMO_CODIGO IS NOT NULL AND TICKET_TIPO_COMPROBANTE  IS NOT NULL AND  SUCURSAL_NOMBRE IS NOT NULL AND TICKET_NUMERO IS NOT NULL AND PRODUCTO_NOMBRE IS NOT NULL AND TICKET_DET_PRECIO IS NOT NULL AND TICKET_DET_CANTIDAD IS NOT NULL AND PROMO_APLICADA_DESCUENTO IS NOT NULL;
 
-SELECT 
-    COUNT(DISTINCT envi_codigo) AS cantidad_envios,
-    CAST(tick_fecha_hora AS date) AS fecha,
-    DATEDIFF(YEAR, clie_fecha_nacimiento, CAST(tick_fecha_hora AS date)) AS DIFERENCIA
-FROM 
-    MASTER_COOKS.Ticket 
-JOIN 
-    MASTER_COOKS.Cliente 
-ON 
-    CAST(clie_documento AS varchar) + CAST(clie_apellido AS varchar) = CAST(tick_cliente_documento AS varchar) + CAST(tick_cliente_apellido AS varchar)
-JOIN 
-    MASTER_COOKS.Envio 
-ON 
-    CAST(envi_ticket_numero AS varchar) + CAST(envi_ticket_sucursal AS varchar) + CAST(envi_ticket_tipo AS varchar) = 
-    CAST(tick_numero AS varchar) + CAST(tick_sucursal_id AS varchar) + CAST(tick_tipo AS varchar)
-WHERE 
-    MONTH(tick_fecha_hora) BETWEEN 1 AND 4 
-    AND DATEDIFF(YEAR, clie_fecha_nacimiento, CAST(tick_fecha_hora AS date)) < 25
-GROUP BY 
-    CAST(tick_fecha_hora AS date), clie_fecha_nacimiento;
+

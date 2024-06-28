@@ -338,15 +338,22 @@ GO
 CREATE VIEW BI_VW_PorcentajeVentasRangoEtarioCliente AS
 SELECT
     dt.anio,
+    dt.cuatrimestre,
     dre.descripcion AS rango_etario_cliente,
     dc.tipo_caja,
-    COUNT(*) * 100.0 / SUM(COUNT(*)) OVER (PARTITION BY dt.anio) AS porcentaje_ventas
-FROM BI_Fact_Ventas fv
-JOIN BI_Dim_Tiempo dt ON fv.id_tiempo = dt.id_tiempo
-JOIN BI_Dim_Rango_Etario dre ON fv.id_rango_etario = dre.id_rango_etario
-JOIN BI_Dim_Caja dc ON fv.id_caja = dc.id_caja
-GROUP BY dt.anio, dre.descripcion, dc.tipo_caja;
+    COUNT(*) * 100.0 / (SELECT COUNT(*) from BI_Fact_Ventas) AS porcentaje_ventas
+FROM
+    BI_Fact_Ventas fv
+JOIN
+    BI_Dim_Tiempo dt ON fv.id_tiempo = dt.id_tiempo
+JOIN
+    BI_Dim_Rango_Etario dre ON fv.id_rango_etario = dre.id_rango_etario
+JOIN
+    BI_Dim_Caja dc ON fv.id_caja = dc.id_caja
+GROUP BY
+    dt.anio, dt.cuatrimestre, dre.descripcion, dc.tipo_caja;
 GO
+
 -- 4. Cantidad de ventas por turno y localidad
 CREATE VIEW BI_VW_VentasPorTurnoLocalidad AS
 SELECT
@@ -367,7 +374,7 @@ CREATE VIEW BI_VW_PorcentajeDescuentoAplicado AS
 SELECT
     dt.anio,
     dt.mes,
-    SUM(fd.monto_descuento) * 100.0 / SUM(fv.importe_total) AS porcentaje_descuento
+    SUM(fv.importe_total) / SUM(fd.monto_descuento) * 100.0  AS porcentaje_descuento
 FROM BI_Fact_Descuento fd
 JOIN BI_Dim_Tiempo dt ON fd.id_tiempo = dt.id_tiempo
 JOIN BI_Fact_Ventas fv ON fd.id_ticket = fv.id_ticket AND fd.id_tiempo = fv.id_tiempo
@@ -400,7 +407,8 @@ SELECT
     fe.id_sucursal,
     CAST(fe.envios_cumplidos AS FLOAT) / CAST(fe.cantidad_envios AS FLOAT) * 100 AS porcentaje_cumplimiento
 FROM BI_Fact_Envio fe
-JOIN BI_Dim_Tiempo dt ON fe.id_tiempo = dt.id_tiempo;
+JOIN BI_Dim_Tiempo dt ON fe.id_tiempo = dt.id_tiempo
+GROUP BY dt.anio, dt.mes, fe.id_sucursal, CAST(fe.envios_cumplidos AS FLOAT) / CAST(fe.cantidad_envios AS FLOAT)
 GO
 -- 8. Cantidad de envíos por rango etario de clientes
 CREATE VIEW BI_VW_EnviosPorRangoEtario AS
@@ -443,7 +451,7 @@ SELECT TOP 3
     JOIN BI_Dim_Medio_Pago dmp ON fc.id_medio_pago = dmp.id_medio_pago
     WHERE fc.numero_cuotas > 1
     GROUP BY dt.anio, dt.mes, fc.id_sucursal, dmp.id_medio_pago, fc.numero_cuotas
-	order by fc.numero_cuotas
+	order by total_pagos_cuotas DESC
 GO
 -- 11. Promedio de importe de la cuota en función del rango etareo del cliente
 CREATE VIEW BI_VW_PromedioImporteCuotaPorRangoEtario AS
@@ -454,30 +462,31 @@ FROM BI_Fact_Cuotas fc
 JOIN BI_Dim_Rango_Etario dre ON fc.id_rango_etario = dre.id_rango_etario
 GROUP BY dre.descripcion;
 GO
+
 -- 12. Porcentaje de descuento aplicado por cada medio de pago
 CREATE VIEW BI_VW_PorcentajeDescuentoPorMedioPago AS
 SELECT
     dt.anio,
     dt.cuatrimestre,
     dmp.id_medio_pago,
-     SUM(fv.importe_total) / SUM(fd.monto_descuento) * 100.0  AS porcentaje_descuento
+    100 - (SUM(fd.monto_descuento) / (SUM(fv.importe_total) + SUM(fd.monto_descuento)) * 100) AS porcentaje_descuento
 FROM BI_Fact_Descuento fd
 JOIN BI_Dim_Tiempo dt ON fd.id_tiempo = dt.id_tiempo
 JOIN BI_Dim_Medio_Pago dmp ON fd.id_medio_pago = dmp.id_medio_pago
 JOIN BI_Fact_Ventas fv ON fd.id_ticket = fv.id_ticket AND fd.id_tiempo = fv.id_tiempo
 GROUP BY dt.anio, dt.cuatrimestre, dmp.id_medio_pago;
+GO
 
-SELECT * FROM dbo.BI_VW_CumplimientoEnvios --PARECE QUE ESTA TODO OK
-SELECT * FROM [dbo].[BI_VW_EnviosPorRangoEtario] --PARECE TODO OK
-SELECT * FROM [dbo].[BI_VW_PorcentajeDescuentoAplicado] --FALTA MES 12
-SELECT * FROM [dbo].[BI_VW_PorcentajeDescuentoPorMedioPago] --PARECE TODO OK
-SELECT * FROM [dbo].[BI_VW_PorcentajeVentasRangoEtarioCliente] --PARECE TODO OK
-SELECT * FROM [dbo].[BI_VW_PromedioImporteCuotaPorRangoEtario] --PARECE TODO OK
+
+SELECT * FROM dbo.BI_VW_CumplimientoEnvios --PARECE QUE ESTA TODO OK chequeado en partida doble
+SELECT * FROM [dbo].[BI_VW_EnviosPorRangoEtario] --PARECE TODO OK chequeado
+SELECT * FROM [dbo].[BI_VW_PorcentajeDescuentoAplicado] --PARECE TODO OK chequeado
+SELECT * FROM [dbo].[BI_VW_PorcentajeDescuentoPorMedioPago] --PARECE TODO OK chequeado
+SELECT * FROM [dbo].[BI_VW_PorcentajeVentasRangoEtarioCliente] --PARECE TODO OK chequeado
+SELECT * FROM [dbo].[BI_VW_PromedioImporteCuotaPorRangoEtario] --PARECE TODO OK chequeado
 SELECT * FROM [dbo].[BI_VW_TicketPromedioMensual] --VER QUE ONDA QUE SIEMPRE ES LA MISMA LOCALIDAD (tal vez hay que tomar la localida del cliente y no de la sucursal, ya que todas las sucursales estan en la misma localidad anda a saber por que)
-SELECT * FROM [dbo].[BI_VW_Top3SucursalesPagosCuotas] --no tira el top 3 bien
+SELECT * FROM [dbo].[BI_VW_Top3SucursalesPagosCuotas] --PARECE TODO OK chequeado
 SELECT * FROM [dbo].[BI_VW_Top5LocalidadesCostoEnvio] --SOLO TIRA UNA LOCALIDAD (tal vez hay que tomar la localida del cliente y no de la sucursal, ya que todas las sucursales estan en la misma localidad anda a saber por que)
 SELECT * FROM [dbo].[BI_VW_TopCategoriasDescuento] --PARECE TODO OK
 SELECT * FROM [dbo].[BI_VW_UnidadesPromedioPorTurno] --ver si hay que diferenciar por cuatrimestre tambien o solo por turno
 SELECT * FROM [dbo].[BI_VW_VentasPorTurnoLocalidad] --SOLO SALE UNA LOCALIDAD (tal vez hay que tomar la localida del cliente y no de la sucursal, ya que todas las sucursales estan en la misma localidad anda a saber por que)
-
-
