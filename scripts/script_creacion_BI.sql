@@ -18,6 +18,17 @@ CREATE TABLE BI_Dim_Localidad (
     localidad_nombre VARCHAR(50)
 );
 
+-- Dimensión Cliente
+CREATE TABLE BI_Dim_Cliente (
+    id_cliente VARCHAR(50) PRIMARY KEY
+);
+
+CREATE TABLE BI_Dim_Cliente_Localidad (
+    id_cliente_localidad VARCHAR(160) PRIMARY KEY,
+	id_cliente VARCHAR(50) FOREIGN KEY REFERENCES BI_Dim_Cliente(id_cliente),
+	id_localidad VARCHAR(110) FOREIGN KEY REFERENCES BI_Dim_Localidad(id_localidad)
+);
+
 -- Dimensión Sucursal
 CREATE TABLE BI_Dim_Sucursal (
     id_sucursal DECIMAL(6,0) PRIMARY KEY,
@@ -95,10 +106,11 @@ CREATE TABLE BI_Fact_Envio (
     id_tiempo VARCHAR(20) FOREIGN KEY REFERENCES BI_Dim_Tiempo(id_tiempo),
     id_sucursal DECIMAL(6,0) FOREIGN KEY REFERENCES BI_Dim_Sucursal(id_sucursal),
     id_rango_etario DECIMAL(2,0) FOREIGN KEY REFERENCES BI_Dim_Rango_Etario(id_rango_etario),
+	id_cliente_localidad VARCHAR(160) FOREIGN KEY REFERENCES BI_Dim_Cliente_Localidad(id_cliente_localidad),
     costo_envio_total DECIMAL(12,2),
     cantidad_envios INT,
     envios_cumplidos INT,
-    PRIMARY KEY (id_tiempo, id_sucursal, id_rango_etario)
+    PRIMARY KEY (id_tiempo, id_sucursal, id_rango_etario, id_cliente_localidad)
 );
 -- Tabla de Hechos Cuotas
 CREATE TABLE BI_Fact_Cuotas (
@@ -138,6 +150,21 @@ SELECT DISTINCT
     l.loca_provincia_id,
     l.loca_nombre
 FROM MASTER_COOKS.Localidad l;
+
+-- Poblar Dim_Cliente
+INSERT INTO BI_Dim_Cliente (id_cliente)
+SELECT DISTINCT
+    CONCAT(c.clie_documento, c.clie_apellido) as id_cliente
+FROM MASTER_COOKS.Cliente c
+
+-- Poblar Dim_Cliente
+INSERT INTO BI_Dim_Cliente_Localidad(id_cliente_localidad, id_cliente, id_localidad)
+SELECT DISTINCT
+    CONCAT(c.clie_documento, c.clie_apellido, l.loca_provincia_id, l.loca_nombre) as id_cliente_localidad,
+	CONCAT(c.clie_documento, c.clie_apellido) as id_cliente,
+	CONCAT(l.loca_provincia_id, l.loca_nombre) as id_localidad
+FROM MASTER_COOKS.Cliente c
+JOIN MASTER_COOKS.Localidad l on l.loca_nombre = c.clie_localidad_id
 
 -- Poblar Dim_Sucursal
 INSERT INTO BI_Dim_Sucursal (id_sucursal, sucursal_localidad_id, sucursal_direccion)
@@ -248,7 +275,7 @@ GROUP BY
     p.pago_medio_de_pago_id;
 
 -- Poblar Fact_Envio
-INSERT INTO BI_Fact_Envio (id_tiempo, id_sucursal, id_rango_etario, costo_envio_total, cantidad_envios, envios_cumplidos)
+INSERT INTO BI_Fact_Envio (id_tiempo, id_sucursal, id_rango_etario, id_cliente_localidad, costo_envio_total, cantidad_envios, envios_cumplidos)
 SELECT 
     CONCAT(YEAR(t.tick_fecha_hora), RIGHT('0' + CAST(MONTH(t.tick_fecha_hora) AS VARCHAR(2)), 2)) as id_tiempo,
     e.envi_ticket_sucursal as id_sucursal,
@@ -258,15 +285,18 @@ SELECT
         WHEN DATEDIFF(YEAR, c.clie_fecha_nacimiento, t.tick_fecha_hora) BETWEEN 35 AND 50 THEN 3
         ELSE 4
     END as id_rango_etario,
+	CONCAT(c.clie_documento, c.clie_apellido, l.loca_provincia_id, l.loca_nombre) as id_cliente_localidad,
     SUM(e.envi_costo) as costo_envio_total,
     COUNT(*) as cantidad_envios,
     SUM(CASE WHEN e.envi_fecha_hora_entrega is not null THEN 1 ELSE 0 END) as envios_cumplidos
 FROM MASTER_COOKS.Envio e
 JOIN MASTER_COOKS.Ticket t ON e.envi_ticket_numero = t.tick_numero AND e.envi_ticket_tipo = t.tick_tipo AND e.envi_ticket_sucursal = t.tick_sucursal_id
 JOIN MASTER_COOKS.Cliente c ON t.tick_cliente_documento = c.clie_documento AND t.tick_cliente_apellido = c.clie_apellido
+JOIN MASTER_COOKS.Localidad l ON c.clie_localidad_id = l.loca_nombre
 GROUP BY 
     CONCAT(YEAR(t.tick_fecha_hora), RIGHT('0' + CAST(MONTH(t.tick_fecha_hora) AS VARCHAR(2)), 2)),
     e.envi_ticket_sucursal,
+	CONCAT(c.clie_documento, c.clie_apellido, l.loca_provincia_id, l.loca_nombre),
     CASE
         WHEN DATEDIFF(YEAR, c.clie_fecha_nacimiento, t.tick_fecha_hora) < 25 THEN 1
         WHEN DATEDIFF(YEAR, c.clie_fecha_nacimiento, t.tick_fecha_hora) BETWEEN 25 AND 35 THEN 2
@@ -307,8 +337,8 @@ GROUP BY
     END,
     p.pago_medio_de_pago_id;
 
--- Crear vistas
 GO
+-- Crear vistas
 -- 1. Ticket Promedio mensual
 CREATE VIEW BI_VW_TicketPromedioMensual AS
 SELECT 
@@ -422,22 +452,20 @@ JOIN BI_Dim_Tiempo dt ON fe.id_tiempo = dt.id_tiempo
 JOIN BI_Dim_Rango_Etario dre ON fe.id_rango_etario = dre.id_rango_etario
 GROUP BY dt.anio, dt.cuatrimestre, dre.descripcion;
 GO
+
 -- 9. Las 5 localidades con mayor costo de envío
 CREATE VIEW BI_VW_Top5LocalidadesCostoEnvio AS
-WITH LocalidadCostoEnvio AS (
-    SELECT
-        dl.localidad_nombre,
-        SUM(fe.costo_envio_total) AS total_costo_envio,
-        ROW_NUMBER() OVER (ORDER BY SUM(fe.costo_envio_total) DESC) AS rn
-    FROM BI_Fact_Envio fe
-    JOIN BI_Dim_Sucursal ds ON fe.id_sucursal = ds.id_sucursal
-    JOIN BI_Dim_Localidad dl ON ds.sucursal_localidad_id = dl.id_localidad
-    GROUP BY dl.localidad_nombre
-)
-SELECT localidad_nombre, total_costo_envio
-FROM LocalidadCostoEnvio
-WHERE rn <= 5;
+SELECT TOP 5
+    loc.localidad_nombre AS Localidad,
+    SUM(env.costo_envio_total) AS Costo_Envio_Total
+	FROM BI_Fact_Envio env
+JOIN BI_Dim_Cliente_Localidad cl ON env.id_cliente_localidad = cl.id_cliente_localidad
+JOIN BI_Dim_Localidad loc ON cl.id_localidad = loc.id_localidad
+GROUP BY loc.localidad_nombre
+ORDER BY SUM(env.costo_envio_total) DESC;
 GO
+
+
 -- 10. Las 3 sucursales con el mayor importe de pagos en cuotas
 CREATE VIEW BI_VW_Top3SucursalesPagosCuotas AS
 SELECT TOP 3
@@ -486,7 +514,7 @@ SELECT * FROM [dbo].[BI_VW_PorcentajeVentasRangoEtarioCliente] --PARECE TODO OK 
 SELECT * FROM [dbo].[BI_VW_PromedioImporteCuotaPorRangoEtario] --PARECE TODO OK chequeado
 SELECT * FROM [dbo].[BI_VW_TicketPromedioMensual] --VER QUE ONDA QUE SIEMPRE ES LA MISMA LOCALIDAD (tal vez hay que tomar la localida del cliente y no de la sucursal, ya que todas las sucursales estan en la misma localidad anda a saber por que)
 SELECT * FROM [dbo].[BI_VW_Top3SucursalesPagosCuotas] --PARECE TODO OK chequeado
-SELECT * FROM [dbo].[BI_VW_Top5LocalidadesCostoEnvio] --SOLO TIRA UNA LOCALIDAD (tal vez hay que tomar la localida del cliente y no de la sucursal, ya que todas las sucursales estan en la misma localidad anda a saber por que)
+SELECT * FROM [dbo].[BI_VW_Top5LocalidadesCostoEnvio] --PARECE TODO OK
 SELECT * FROM [dbo].[BI_VW_TopCategoriasDescuento] --PARECE TODO OK
 SELECT * FROM [dbo].[BI_VW_UnidadesPromedioPorTurno] --ver si hay que diferenciar por cuatrimestre tambien o solo por turno
 SELECT * FROM [dbo].[BI_VW_VentasPorTurnoLocalidad] --SOLO SALE UNA LOCALIDAD (tal vez hay que tomar la localida del cliente y no de la sucursal, ya que todas las sucursales estan en la misma localidad anda a saber por que)
