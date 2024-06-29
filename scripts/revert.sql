@@ -40,10 +40,10 @@ DROP SCHEMA IF EXISTS MASTER_COOKS;
 -- Eliminar vistas
 
 DROP VIEW IF EXISTS BI_VW_PorcentajeDescuentoPorMedioPago;
-DROP VIEW IF EXISTS BI_VW_PromedioImporteCuotaPorRangoEtario;
+DROP VIEW IF EXISTS BI_VW_PromedioImporteCuotaPorRangoEtarioCliente;
 DROP VIEW IF EXISTS BI_VW_Top3SucursalesPagosCuotas;
 DROP VIEW IF EXISTS BI_VW_Top5LocalidadesCostoEnvio;
-DROP VIEW IF EXISTS BI_VW_EnviosPorRangoEtario;
+DROP VIEW IF EXISTS BI_VW_EnviosPorRangoEtarioCliente;
 DROP VIEW IF EXISTS BI_VW_CumplimientoEnvios;
 DROP VIEW IF EXISTS BI_VW_Top3CategoriasDescuento;
 DROP VIEW IF EXISTS BI_VW_PorcentajeDescuentoAplicado;
