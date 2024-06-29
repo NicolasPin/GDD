@@ -36,11 +36,18 @@ CREATE TABLE BI_Dim_Sucursal (
     sucursal_direccion VARCHAR(50)
 );
 
--- Dimensión Rango Etario
-CREATE TABLE BI_Dim_Rango_Etario (
-    id_rango_etario DECIMAL(2,0) PRIMARY KEY,
+-- Dimensión Rango Etario Cliente
+CREATE TABLE BI_Dim_Rango_Etario_Cliente (
+    id_rango_etario_cliente DECIMAL(2,0) PRIMARY KEY,
     descripcion VARCHAR(50)
 );
+
+-- Dimensión Rango Etario Empleado
+CREATE TABLE BI_Dim_Rango_Etario_Empleado (
+    id_rango_etario_empleado DECIMAL(2,0) PRIMARY KEY,
+    descripcion VARCHAR(50)
+);
+
 
 -- Dimensión Turnos
 CREATE TABLE BI_Dim_Turno (
@@ -79,7 +86,8 @@ CREATE TABLE BI_Dim_Caja (
 CREATE TABLE BI_Fact_Ventas (
     id_tiempo VARCHAR(20) FOREIGN KEY REFERENCES BI_Dim_Tiempo(id_tiempo),
     id_sucursal DECIMAL(6,0) FOREIGN KEY REFERENCES BI_Dim_Sucursal(id_sucursal),
-    id_rango_etario DECIMAL(2,0) FOREIGN KEY REFERENCES BI_Dim_Rango_Etario(id_rango_etario),
+    id_rango_etario_cliente DECIMAL(2,0) FOREIGN KEY REFERENCES BI_Dim_Rango_Etario_Cliente(id_rango_etario_cliente),
+	id_rango_etario_empleado DECIMAL(2,0) FOREIGN KEY REFERENCES BI_Dim_Rango_Etario_Empleado(id_rango_etario_empleado),
     id_turno DECIMAL(6,0) FOREIGN KEY REFERENCES BI_Dim_Turno(id_turno),
     id_medio_pago VARCHAR(50) FOREIGN KEY REFERENCES BI_Dim_Medio_Pago(id_medio_pago),
     id_categoria DECIMAL(8,0) FOREIGN KEY REFERENCES BI_Dim_Categoria(id_categoria),
@@ -87,7 +95,7 @@ CREATE TABLE BI_Fact_Ventas (
     id_caja VARCHAR(100) FOREIGN KEY REFERENCES BI_Dim_Caja(id_caja),
     importe_total DECIMAL(12,2),
     cantidad_unidades DECIMAL(12,0),
-    PRIMARY KEY (id_tiempo, id_sucursal, id_rango_etario, id_turno, id_medio_pago, id_categoria, id_ticket, id_caja)
+    PRIMARY KEY (id_tiempo, id_sucursal, id_rango_etario_cliente, id_rango_etario_empleado, id_turno, id_medio_pago, id_categoria, id_ticket, id_caja)
 );
 
 -- Tabla de Hechos Descuentos
@@ -97,6 +105,7 @@ CREATE TABLE BI_Fact_Descuento (
     id_tiempo VARCHAR(20) FOREIGN KEY REFERENCES BI_Dim_Tiempo(id_tiempo),
     id_medio_pago VARCHAR(50) FOREIGN KEY REFERENCES BI_Dim_Medio_Pago(id_medio_pago),
     monto_descuento DECIMAL(12,2),
+    monto_descuento_promocion DECIMAL(12,2),
     tipo_descuento VARCHAR(30),
     PRIMARY KEY (id_ticket, id_categoria, id_tiempo, id_medio_pago)
 );
@@ -174,8 +183,16 @@ SELECT DISTINCT
     s.sucu_direccion
 FROM MASTER_COOKS.Sucursal s;
 
--- Poblar Dim_Rango_Etario
-INSERT INTO BI_Dim_Rango_Etario (id_rango_etario, descripcion)
+-- Poblar Dim_Rango_Etario_Cliente
+INSERT INTO BI_Dim_Rango_Etario_Cliente (id_rango_etario_cliente, descripcion)
+VALUES
+(1, 'Menor a 25'),
+(2, 'Entre 25 y 35'),
+(3, 'Entre 35 y 50'),
+(4, 'Mayor a 50');
+
+-- Poblar Dim_Rango_Etario_Empleado
+INSERT INTO BI_Dim_Rango_Etario_Empleado (id_rango_etario_empleado, descripcion)
 VALUES
 (1, 'Menor a 25'),
 (2, 'Entre 25 y 35'),
@@ -218,7 +235,7 @@ FROM MASTER_COOKS.Ticket
 JOIN MASTER_COOKS.Caja on caja_sucursal_id = tick_sucursal_id AND tick_caja_numero = caja_numero
 
 --Poblar Fact_Ventas
-INSERT INTO BI_Fact_Ventas (id_tiempo, id_sucursal, id_rango_etario, id_turno, id_medio_pago, id_categoria, id_ticket, id_caja, importe_total, cantidad_unidades)
+INSERT INTO BI_Fact_Ventas (id_tiempo, id_sucursal, id_rango_etario_cliente, id_rango_etario_empleado, id_turno, id_medio_pago, id_categoria, id_ticket, id_caja, importe_total, cantidad_unidades)
 SELECT DISTINCT
     CONCAT(YEAR(t.tick_fecha_hora), RIGHT('0' + CAST(MONTH(t.tick_fecha_hora) AS VARCHAR(2)), 2)) as id_tiempo,
     t.tick_sucursal_id,
@@ -227,7 +244,13 @@ SELECT DISTINCT
         WHEN DATEDIFF(YEAR, c.clie_fecha_nacimiento, t.tick_fecha_hora) BETWEEN 25 AND 35 THEN 2
         WHEN DATEDIFF(YEAR, c.clie_fecha_nacimiento, t.tick_fecha_hora) BETWEEN 35 AND 50 THEN 3
         ELSE 4
-    END as id_rango_etario,
+    END as id_rango_etario_cliente,
+	 CASE
+        WHEN DATEDIFF(YEAR, e.empl_fecha_nacimiento, t.tick_fecha_hora) < 25 THEN 1
+        WHEN DATEDIFF(YEAR, e.empl_fecha_nacimiento, t.tick_fecha_hora) BETWEEN 25 AND 35 THEN 2
+        WHEN DATEDIFF(YEAR, e.empl_fecha_nacimiento, t.tick_fecha_hora) BETWEEN 35 AND 50 THEN 3
+        ELSE 4
+    END as id_rango_etario_empleado,
     CASE
         WHEN DATEPART(HOUR, t.tick_fecha_hora) BETWEEN 8 AND 12 THEN 1
         WHEN DATEPART(HOUR, t.tick_fecha_hora) BETWEEN 12 AND 16 THEN 2
@@ -241,21 +264,23 @@ SELECT DISTINCT
     SUM(it.item_cantidad) as cantidad_unidades
 FROM MASTER_COOKS.Ticket t
 JOIN MASTER_COOKS.Cliente c ON t.tick_cliente_documento = c.clie_documento AND t.tick_cliente_apellido = c.clie_apellido
+JOIN MASTER_COOKS.Empleado e ON t.tick_vendedor_id = e.empl_legajo
 JOIN MASTER_COOKS.Item_Ticket it ON t.tick_numero = it.item_ticket_numero AND t.tick_tipo = it.item_tipo_id AND t.tick_sucursal_id = it.item_sucursal_id
 JOIN MASTER_COOKS.Producto_X_Subcategoria pxs ON it.item_producto_codigo = pxs.prodx_producto_codigo AND it.item_producto_precio = pxs.prodx_producto_precio
 JOIN MASTER_COOKS.Categoria_X_Subcategoria cxs ON pxs.prodx_subcategoria_id = cxs.catx_subcategoria_id
 JOIN MASTER_COOKS.Pago p ON t.tick_numero = p.pago_ticket_numero AND t.tick_tipo = p.pago_ticket_tipo AND t.tick_sucursal_id = p.pago_ticket_sucursal
 JOIN MASTER_COOKS.Caja caja on caja.caja_sucursal_id = t.tick_sucursal_id AND t.tick_caja_numero = caja.caja_numero
-GROUP BY YEAR(t.tick_fecha_hora), MONTH(t.tick_fecha_hora), t.tick_sucursal_id, c.clie_fecha_nacimiento, t.tick_fecha_hora, p.pago_medio_de_pago_id, cxs.catx_categoria_id, t.tick_numero, t.tick_tipo, t.tick_sucursal_id, t.tick_caja_numero, caja.caja_tipo_id, t.tick_total;
+GROUP BY YEAR(t.tick_fecha_hora), MONTH(t.tick_fecha_hora), t.tick_sucursal_id, c.clie_fecha_nacimiento, e.empl_fecha_nacimiento, t.tick_fecha_hora, p.pago_medio_de_pago_id, cxs.catx_categoria_id, t.tick_numero, t.tick_tipo, t.tick_sucursal_id, t.tick_caja_numero, caja.caja_tipo_id, t.tick_total;
 
 -- Poblar Fact_Descuento
-INSERT INTO BI_Fact_Descuento (id_ticket, id_categoria, id_tiempo, id_medio_pago, monto_descuento, tipo_descuento)
+INSERT INTO BI_Fact_Descuento (id_ticket, id_categoria, id_tiempo, id_medio_pago, monto_descuento, monto_descuento_promocion, tipo_descuento)
 SELECT 
     CONCAT(t.tick_numero, t.tick_tipo, t.tick_sucursal_id) as id_ticket,
     cxs.catx_categoria_id as id_categoria,
     CONCAT(YEAR(t.tick_fecha_hora), RIGHT('0' + CAST(MONTH(t.tick_fecha_hora) AS VARCHAR(2)), 2)) as id_tiempo,
     p.pago_medio_de_pago_id,
     SUM(t.tick_total_descuento_promocion + t.tick_total_descuento_aplicado_mp) as monto_descuento,
+	SUM(t.tick_total_descuento_promocion) as monto_descuento_promocion,
     CASE
         WHEN SUM(t.tick_total_descuento_promocion) > 0 AND SUM(t.tick_total_descuento_aplicado_mp) > 0 THEN 'Promoción y Medio de Pago'
         WHEN SUM(t.tick_total_descuento_promocion) > 0 THEN 'Promoción'
@@ -288,7 +313,7 @@ SELECT
 	CONCAT(c.clie_documento, c.clie_apellido, l.loca_provincia_id, l.loca_nombre) as id_cliente_localidad,
     SUM(e.envi_costo) as costo_envio_total,
     COUNT(*) as cantidad_envios,
-    SUM(CASE WHEN e.envi_fecha_hora_entrega is not null THEN 1 ELSE 0 END) as envios_cumplidos
+    SUM(CASE WHEN (cast(e.envi_fecha_hora_entrega as date) = e.envi_fecha_programada) THEN 1 ELSE 0 END) as envios_cumplidos
 FROM MASTER_COOKS.Envio e
 JOIN MASTER_COOKS.Ticket t ON e.envi_ticket_numero = t.tick_numero AND e.envi_ticket_tipo = t.tick_tipo AND e.envi_ticket_sucursal = t.tick_sucursal_id
 JOIN MASTER_COOKS.Cliente c ON t.tick_cliente_documento = c.clie_documento AND t.tick_cliente_apellido = c.clie_apellido
@@ -303,6 +328,7 @@ GROUP BY
         WHEN DATEDIFF(YEAR, c.clie_fecha_nacimiento, t.tick_fecha_hora) BETWEEN 35 AND 50 THEN 3
         ELSE 4
     END;
+
 
 -- Poblar Fact_Cuotas
 INSERT INTO BI_Fact_Cuotas (id_ticket, id_tiempo, id_sucursal, id_rango_etario, id_medio_pago, numero_cuotas, importe_cuota, importe_total)
@@ -345,7 +371,7 @@ SELECT
     dt.anio,
     dt.mes,
     dl.localidad_nombre,
-    AVG(fv.importe_total) AS ticket_promedio
+	(SUM(fv.importe_total) / COUNT(*)) AS ticket_promedio
 FROM BI_Fact_Ventas fv
 JOIN BI_Dim_Tiempo dt ON fv.id_tiempo = dt.id_tiempo
 JOIN BI_Dim_Sucursal ds ON fv.id_sucursal = ds.id_sucursal
@@ -358,18 +384,18 @@ SELECT
     dt.anio,
     dt.cuatrimestre,
     dtur.id_turno,
-    AVG(CAST(fv.cantidad_unidades AS FLOAT)) AS unidades_promedio
+	(SUM(fv.cantidad_unidades) / COUNT(*)) as unidades_promedio
 FROM BI_Fact_Ventas fv
 JOIN BI_Dim_Tiempo dt ON fv.id_tiempo = dt.id_tiempo
 JOIN BI_Dim_Turno dtur ON fv.id_turno = dtur.id_turno
-GROUP BY dt.anio, dt.cuatrimestre, dtur.id_turno;
+GROUP BY dt.anio, dt.cuatrimestre, dtur.id_turno
 GO
 -- 3. Porcentaje anual de ventas por rango etario del cliente y tipo de caja
-CREATE VIEW BI_VW_PorcentajeVentasRangoEtarioCliente AS
+CREATE VIEW BI_VW_PorcentajeVentasRangoEtarioEmpleado AS
 SELECT
     dt.anio,
     dt.cuatrimestre,
-    dre.descripcion AS rango_etario_cliente,
+    dre.descripcion AS rango_etario_empleado,
     dc.tipo_caja,
     COUNT(*) * 100.0 / (SELECT COUNT(*) from BI_Fact_Ventas) AS porcentaje_ventas
 FROM
@@ -377,7 +403,7 @@ FROM
 JOIN
     BI_Dim_Tiempo dt ON fv.id_tiempo = dt.id_tiempo
 JOIN
-    BI_Dim_Rango_Etario dre ON fv.id_rango_etario = dre.id_rango_etario
+    BI_Dim_Rango_Etario_Empleado dre ON fv.id_rango_etario_empleado = dre.id_rango_etario_empleado
 JOIN
     BI_Dim_Caja dc ON fv.id_caja = dc.id_caja
 GROUP BY
@@ -412,22 +438,20 @@ GROUP BY dt.anio, dt.mes;
 GO
 
 -- 6. Las tres categorías de productos con mayor descuento aplicado
-CREATE VIEW BI_VW_TopCategoriasDescuento AS
-WITH CategoriaDescuento AS (
-    SELECT
-        dt.anio,
-        dt.cuatrimestre,
-        dc.id_categoria,
-        SUM(fd.monto_descuento) AS total_descuento,
-        ROW_NUMBER() OVER (PARTITION BY dt.anio, dt.cuatrimestre ORDER BY SUM(fd.monto_descuento) DESC) AS rn
-    FROM BI_Fact_Descuento fd
-    JOIN BI_Dim_Tiempo dt ON fd.id_tiempo = dt.id_tiempo
-    JOIN BI_Dim_Categoria dc ON fd.id_categoria = dc.id_categoria
-    GROUP BY dt.anio, dt.cuatrimestre, dc.id_categoria
-)
-SELECT anio, cuatrimestre, id_categoria, total_descuento
-FROM CategoriaDescuento
-WHERE rn <= 3;
+CREATE VIEW BI_VW_Top3CategoriasDescuento AS
+SELECT TOP 3
+    dt.anio,
+    dt.cuatrimestre,
+    dc.id_categoria,
+    SUM(fd.monto_descuento_promocion) AS total_descuento
+FROM BI_Fact_Descuento fd
+JOIN BI_Dim_Tiempo dt ON fd.id_tiempo = dt.id_tiempo
+JOIN BI_Dim_Categoria dc ON fd.id_categoria = dc.id_categoria
+GROUP BY dt.anio, dt.cuatrimestre, dc.id_categoria
+ORDER BY 
+    dt.anio,
+    dt.cuatrimestre,
+    SUM(fd.monto_descuento) DESC;
 GO
 -- 7. Porcentaje de cumplimiento de envíos
 CREATE VIEW BI_VW_CumplimientoEnvios AS
@@ -441,7 +465,7 @@ JOIN BI_Dim_Tiempo dt ON fe.id_tiempo = dt.id_tiempo
 GROUP BY dt.anio, dt.mes, fe.id_sucursal, CAST(fe.envios_cumplidos AS FLOAT) / CAST(fe.cantidad_envios AS FLOAT)
 GO
 -- 8. Cantidad de envíos por rango etario de clientes
-CREATE VIEW BI_VW_EnviosPorRangoEtario AS
+CREATE VIEW BI_VW_EnviosPorRangoEtarioCliente AS
 SELECT
     dt.anio,
     dt.cuatrimestre,
@@ -506,15 +530,27 @@ GROUP BY dt.anio, dt.cuatrimestre, dmp.id_medio_pago;
 GO
 
 
-SELECT * FROM dbo.BI_VW_CumplimientoEnvios --PARECE QUE ESTA TODO OK chequeado en partida doble
+-- 1
+SELECT * FROM [dbo].[BI_VW_TicketPromedioMensual]
+--2
+SELECT * FROM [dbo].[BI_VW_UnidadesPromedioPorTurno]
+--3
+SELECT * FROM [dbo].[BI_VW_PorcentajeVentasRangoEtarioEmpleado]
+--4
+SELECT * FROM [dbo].[BI_VW_VentasPorTurnoLocalidad]
+--5
+SELECT * FROM [dbo].[BI_VW_PorcentajeDescuentoAplicado]
+--6
+SELECT * FROM [dbo].[BI_VW_Top3CategoriasDescuento]
+--7
+SELECT * FROM [dbo].[BI_VW_CumplimientoEnvios]
+--8
 SELECT * FROM [dbo].[BI_VW_EnviosPorRangoEtario] --PARECE TODO OK chequeado
-SELECT * FROM [dbo].[BI_VW_PorcentajeDescuentoAplicado] --PARECE TODO OK chequeado
-SELECT * FROM [dbo].[BI_VW_PorcentajeDescuentoPorMedioPago] --PARECE TODO OK chequeado
-SELECT * FROM [dbo].[BI_VW_PorcentajeVentasRangoEtarioCliente] --PARECE TODO OK chequeado
-SELECT * FROM [dbo].[BI_VW_PromedioImporteCuotaPorRangoEtario] --PARECE TODO OK chequeado
-SELECT * FROM [dbo].[BI_VW_TicketPromedioMensual] --VER QUE ONDA QUE SIEMPRE ES LA MISMA LOCALIDAD (tal vez hay que tomar la localida del cliente y no de la sucursal, ya que todas las sucursales estan en la misma localidad anda a saber por que)
-SELECT * FROM [dbo].[BI_VW_Top3SucursalesPagosCuotas] --PARECE TODO OK chequeado
+--9
 SELECT * FROM [dbo].[BI_VW_Top5LocalidadesCostoEnvio] --PARECE TODO OK
-SELECT * FROM [dbo].[BI_VW_TopCategoriasDescuento] --PARECE TODO OK
-SELECT * FROM [dbo].[BI_VW_UnidadesPromedioPorTurno] --ver si hay que diferenciar por cuatrimestre tambien o solo por turno
-SELECT * FROM [dbo].[BI_VW_VentasPorTurnoLocalidad] --SOLO SALE UNA LOCALIDAD (tal vez hay que tomar la localida del cliente y no de la sucursal, ya que todas las sucursales estan en la misma localidad anda a saber por que)
+--10
+SELECT * FROM [dbo].[BI_VW_Top3SucursalesPagosCuotas] --PARECE TODO OK chequeado
+--11
+SELECT * FROM [dbo].[BI_VW_PromedioImporteCuotaPorRangoEtario] --PARECE TODO OK chequeado
+--12
+SELECT * FROM [dbo].[BI_VW_PorcentajeDescuentoPorMedioPago] --PARECE TODO OK chequeado
