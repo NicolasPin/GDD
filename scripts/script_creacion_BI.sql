@@ -6,24 +6,18 @@ CREATE TABLE MASTER_COOKS.BI_Dim_Tiempo (
     tiempo_cuatrimestre CHAR(1)
 );
 
--- Dimensión Provincia
-CREATE TABLE MASTER_COOKS.BI_Dim_Provincia (
-    provincia_id VARCHAR(60) PRIMARY KEY
-);
-
--- Dimensión Localidad
-CREATE TABLE MASTER_COOKS.BI_Dim_Localidad (
-    localidad_id VARCHAR(110) PRIMARY KEY,
-    localidad_provincia VARCHAR(60),
-    localidad_nombre VARCHAR(50)
-	FOREIGN KEY (localidad_provincia) REFERENCES MASTER_COOKS.BI_Dim_Provincia(provincia_id)
+-- Dimensión Ubicacion
+CREATE TABLE MASTER_COOKS.BI_Dim_Ubicacion (
+    ubicacion_id VARCHAR(110) PRIMARY KEY,
+    ubicacion_provincia VARCHAR(60),
+    ubicacion_localidad VARCHAR(50)
 );
 
 -- Dimensión Sucursal
 CREATE TABLE MASTER_COOKS.BI_Dim_Sucursal (
     sucursal_id DECIMAL(6,0) PRIMARY KEY,
-    sucursal_localidad VARCHAR(110)
-	FOREIGN KEY (sucursal_localidad) REFERENCES MASTER_COOKS.BI_Dim_Localidad(localidad_id),
+    sucursal_ubicacion VARCHAR(110)
+	FOREIGN KEY (sucursal_ubicacion) REFERENCES MASTER_COOKS.BI_Dim_Ubicacion(ubicacion_id),
 );
 
 -- Dimensión Rango Etario
@@ -35,10 +29,10 @@ CREATE TABLE MASTER_COOKS.BI_Dim_Rango_Etario (
 -- Dimensión Cliente
 CREATE TABLE MASTER_COOKS.BI_Dim_Cliente (
     cliente_id VARCHAR(50) PRIMARY KEY,
-    cliente_localidad VARCHAR(110),
+    cliente_ubicacion VARCHAR(110),
     cliente_rango_etario DECIMAL(2,0)
     FOREIGN KEY (cliente_rango_etario) REFERENCES MASTER_COOKS.BI_Dim_Rango_Etario(rango_id),
-	FOREIGN KEY (cliente_localidad) REFERENCES MASTER_COOKS.BI_Dim_Localidad(localidad_id)
+	FOREIGN KEY (cliente_ubicacion) REFERENCES MASTER_COOKS.BI_Dim_Ubicacion(ubicacion_id)
 );
 
 CREATE TABLE MASTER_COOKS.BI_Dim_Empleado (
@@ -79,12 +73,11 @@ CREATE TABLE MASTER_COOKS.BI_Fact_Ventas (
     cliente_id VARCHAR(50) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Cliente(cliente_id),
 	empleado_id VARCHAR(60) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Empleado(empleado_id),
     turno_id DECIMAL(6,0) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Turno(turno_id),
-    medio_pago_id VARCHAR(50) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Medio_Pago(medio_pago_id),
     tipo_caja_id VARCHAR(50) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Tipo_Caja(tipo_caja_id),
     importe_total DECIMAL(12,2),
-	subtotal DECIMAL(12,2),
+	promedio_venta DECIMAL(12,2),
     cantidad_unidades DECIMAL(12,0),
-    PRIMARY KEY (tiempo_id, sucursal_id, cliente_id, empleado_id, turno_id, medio_pago_id, tipo_caja_id)
+    PRIMARY KEY (tiempo_id, sucursal_id, cliente_id, empleado_id, turno_id, tipo_caja_id)
 );
 
 -- Tabla de Hechos Promociones
@@ -139,14 +132,8 @@ VALUES
 (3, 'Entre 35 y 50'),
 (4, 'Mayor a 50');
 
--- Poblar Dim_Provincia
-INSERT INTO MASTER_COOKS.BI_Dim_Provincia (provincia_id)
-SELECT DISTINCT 
-	prov_nombre
-FROM MASTER_COOKS.Provincia;
-
--- Poblar Dim_Localidad
-INSERT INTO MASTER_COOKS.BI_Dim_Localidad (localidad_id, localidad_provincia, localidad_nombre)
+-- Poblar Dim_Ubicacion
+INSERT INTO MASTER_COOKS.BI_Dim_Ubicacion (ubicacion_id, ubicacion_provincia, ubicacion_localidad)
 SELECT DISTINCT
     CONCAT(l.loca_provincia_id, l.loca_nombre),
     l.loca_provincia_id,
@@ -154,10 +141,10 @@ SELECT DISTINCT
 FROM MASTER_COOKS.Localidad l;
 
 -- Poblar Dim_Cliente
-INSERT INTO MASTER_COOKS.BI_Dim_Cliente (cliente_id, cliente_localidad, cliente_rango_etario)
+INSERT INTO MASTER_COOKS.BI_Dim_Cliente (cliente_id, cliente_ubicacion, cliente_rango_etario)
 SELECT DISTINCT
     CONCAT(c.clie_documento, c.clie_apellido),
-	clie_localidad_id,
+	c.clie_localidad_id,
 	CASE
         WHEN DATEDIFF(YEAR, c.clie_fecha_nacimiento, t.tick_fecha_hora) < 25 THEN 1
         WHEN DATEDIFF(YEAR, c.clie_fecha_nacimiento, t.tick_fecha_hora) BETWEEN 25 AND 35 THEN 2
@@ -182,18 +169,18 @@ FROM MASTER_COOKS.Empleado e
 JOIN MASTER_COOKS.Ticket t ON t.tick_vendedor_id = e.empl_legajo
 
 -- Poblar Dim_Sucursal
-INSERT INTO MASTER_COOKS.BI_Dim_Sucursal (sucursal_id, sucursal_localidad)
+INSERT INTO MASTER_COOKS.BI_Dim_Sucursal (sucursal_id, sucursal_ubicacion)
 SELECT DISTINCT
     s.sucu_numero,
     CONCAT(s.sucu_provincia_id, s.sucu_localidad_id)
 FROM MASTER_COOKS.Sucursal s;
 
 -- Poblar Dim_Turno
-INSERT INTO MASTER_COOKS.BI_Dim_Turno (turno_id, turno_hora_inicio, turno_hora_fin)
+INSERT INTO MASTER_COOKS.BI_Dim_Turno (turno_hora_inicio, turno_hora_fin)
 VALUES
-(1, '08:00:00', '12:00:00'),
-(2, '12:00:00', '16:00:00'),
-(3, '16:00:00', '20:00:00');
+(1, 8, 12),
+(2, 12, 16),
+(3, 16, 20);
 
 -- Poblar Dim_Medio_Pago
 INSERT INTO MASTER_COOKS.BI_Dim_Medio_Pago (medio_pago_id, medio_pago_tipo)
@@ -215,31 +202,31 @@ SELECT DISTINCT
 FROM MASTER_COOKS.Tipo_Caja
 
 --Poblar Fact_Ventas
-
-INSERT INTO MASTER_COOKS.BI_Fact_Ventas (tiempo_id, sucursal_id, cliente_id, empleado_id, turno_id, medio_pago_id, tipo_caja_id, importe_total, subtotal, cantidad_unidades)
+INSERT INTO MASTER_COOKS.BI_Fact_Ventas (tiempo_id, sucursal_id, cliente_id, empleado_id, turno_id, tipo_caja_id, importe_total, promedio_venta, cantidad_unidades)
 SELECT
-    CONCAT(YEAR(t.tick_fecha_hora), RIGHT('0' + CAST(MONTH(t.tick_fecha_hora) AS VARCHAR(2)), 2)),
-    t.tick_sucursal_id,
-	CONCAT(t.tick_cliente_documento, t.tick_cliente_apellido),
-	t.tick_vendedor_id,
-    CASE
-        WHEN DATEPART(HOUR, t.tick_fecha_hora) BETWEEN 8 AND 12 THEN 1
-        WHEN DATEPART(HOUR, t.tick_fecha_hora) BETWEEN 12 AND 16 THEN 2
-        ELSE 3
-    END,
-    p.pago_medio_de_pago_id,
-    tipo.tipo_descripcion,
+    dti.tiempo_id,
+    dsu.sucursal_id,
+	dcl.cliente_id,
+	dem.empleado_id,
+    dtu.turno_id,
+    dtc.tipo_caja_id,
     t.tick_total,
-	t.tick_subtotal_productos,
+	SUM(t.tick_total)/COUNT(distinct t.tick_numero+t.tick_sucursal_id+t.tick_tipo),
     SUM(it.item_cantidad)
 FROM MASTER_COOKS.Ticket t
+JOIN MASTER_COOKS.BI_Dim_Tiempo dti ON dti.tiempo_id = CONCAT(YEAR(t.tick_fecha_hora), RIGHT('0' + CAST(MONTH(t.tick_fecha_hora) AS VARCHAR(2)), 2))
+JOIN MASTER_COOKS.BI_Dim_Sucursal dsu ON dsu.sucursal_id = t.tick_sucursal_id
+JOIN MASTER_COOKS.BI_Dim_Cliente dcl ON dcl.cliente_id = CONCAT(t.tick_cliente_documento, t.tick_cliente_apellido)
+JOIN MASTER_COOKS.BI_Dim_Empleado dem ON dem.empleado_id = t.tick_vendedor_id
 JOIN MASTER_COOKS.Item_Ticket it ON t.tick_numero = it.item_ticket_numero AND t.tick_tipo = it.item_tipo_id AND t.tick_sucursal_id = it.item_sucursal_id
-JOIN MASTER_COOKS.Pago p ON t.tick_numero = p.pago_ticket_numero AND t.tick_tipo = p.pago_ticket_tipo AND t.tick_sucursal_id = p.pago_ticket_sucursal
 JOIN MASTER_COOKS.Caja caja ON caja.caja_sucursal_id = t.tick_sucursal_id AND t.tick_caja_numero = caja.caja_numero
-JOIN MASTER_COOKS.Tipo_Caja tipo ON caja.caja_tipo_id = tipo.tipo_descripcion
-GROUP BY t.tick_sucursal_id, t.tick_cliente_apellido, t.tick_cliente_documento, t.tick_vendedor_id, p.pago_medio_de_pago_id, tipo.tipo_descripcion, t.tick_fecha_hora, t.tick_total, t.tick_subtotal_productos;
+JOIN MASTER_COOKS.BI_Dim_Tipo_Caja dtc ON dtc.tipo_caja_id = caja.caja_tipo_id
+JOIN MASTER_COOKS.BI_Dim_Turno dtu ON ((DATEPART(HOUR, t.tick_fecha_hora)) >= dtu.turno_hora_inicio 
+										AND (DATEPART(HOUR, t.tick_fecha_hora)) < dtu.turno_hora_fin
+										AND (DATEPART(HOUR, t.tick_fecha_hora)) BETWEEN dtu.turno_hora_inicio AND dtu.turno_hora_fin)
+GROUP BY dti.tiempo_id, dsu.sucursal_id, dcl.cliente_id, dem.empleado_id, dtu.turno_id, dtc.tipo_caja_id;
 
--- Poblar Fact_Descuento
+-- Poblar Fact_Promociones
 INSERT INTO MASTER_COOKS.BI_Fact_Promociones(id_ticket, id_categoria, id_tiempo, id_medio_pago, monto_descuento, monto_descuento_promocion, tipo_descuento)
 SELECT 
     CONCAT(t.tick_numero, t.tick_tipo, t.tick_sucursal_id) as id_ticket,
