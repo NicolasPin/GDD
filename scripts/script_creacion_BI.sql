@@ -35,7 +35,7 @@ CREATE TABLE MASTER_COOKS.BI_Dim_Cliente (
 	FOREIGN KEY (cliente_ubicacion) REFERENCES MASTER_COOKS.BI_Dim_Ubicacion(ubicacion_id)
 );
 
--- Dimensión Empleado
+--Dimension Empleado
 CREATE TABLE MASTER_COOKS.BI_Dim_Empleado (
     empleado_id VARCHAR(60) PRIMARY KEY,
     empleado_rango_etario DECIMAL(2,0),
@@ -76,7 +76,7 @@ CREATE TABLE MASTER_COOKS.BI_Fact_Ventas (
     turno_id DECIMAL(6,0) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Turno(turno_id),
     tipo_caja_id VARCHAR(50) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Tipo_Caja(tipo_caja_id),
     importe_total DECIMAL(12,2),
-	promedio_venta DECIMAL(12,2),
+	cantidad_ventas DECIMAL(12,2),
     cantidad_unidades DECIMAL(12,0),
     PRIMARY KEY (tiempo_id, sucursal_id, cliente_id, empleado_id, turno_id, tipo_caja_id)
 );
@@ -144,7 +144,7 @@ FROM MASTER_COOKS.Localidad l;
 INSERT INTO MASTER_COOKS.BI_Dim_Cliente (cliente_id, cliente_ubicacion, cliente_rango_etario)
 SELECT DISTINCT
     CONCAT(c.clie_documento, c.clie_apellido),
-	c.clie_localidad_id,
+	CONCAT(c.clie_provincia_id, c.clie_localidad_id),
 	CASE
         WHEN DATEDIFF(YEAR, c.clie_fecha_nacimiento, t.tick_fecha_hora) < 25 THEN 1
         WHEN DATEDIFF(YEAR, c.clie_fecha_nacimiento, t.tick_fecha_hora) BETWEEN 25 AND 35 THEN 2
@@ -154,10 +154,17 @@ SELECT DISTINCT
 FROM MASTER_COOKS.Cliente c
 JOIN MASTER_COOKS.Ticket t ON t.tick_cliente_documento = c.clie_documento and t.tick_cliente_apellido = c.clie_apellido;
 
+-- Poblar Dim_Sucursal
+INSERT INTO MASTER_COOKS.BI_Dim_Sucursal (sucursal_id, sucursal_ubicacion)
+SELECT DISTINCT
+    s.sucu_numero,
+    CONCAT(s.sucu_provincia_id, s.sucu_localidad_id)
+FROM MASTER_COOKS.Sucursal s;
+
 -- Poblar Dim_Empleado
 INSERT INTO MASTER_COOKS.BI_Dim_Empleado (empleado_id, empleado_rango_etario, empleado_sucursal)
 SELECT DISTINCT
-    empl_legajo,
+    e.empl_legajo,
 	CASE
         WHEN DATEDIFF(YEAR, e.empl_fecha_nacimiento, t.tick_fecha_hora) < 25 THEN 1
         WHEN DATEDIFF(YEAR, e.empl_fecha_nacimiento, t.tick_fecha_hora) BETWEEN 25 AND 35 THEN 2
@@ -168,15 +175,8 @@ SELECT DISTINCT
 FROM MASTER_COOKS.Empleado e
 JOIN MASTER_COOKS.Ticket t ON t.tick_vendedor_id = e.empl_legajo
 
--- Poblar Dim_Sucursal
-INSERT INTO MASTER_COOKS.BI_Dim_Sucursal (sucursal_id, sucursal_ubicacion)
-SELECT DISTINCT
-    s.sucu_numero,
-    CONCAT(s.sucu_provincia_id, s.sucu_localidad_id)
-FROM MASTER_COOKS.Sucursal s;
-
 -- Poblar Dim_Turno
-INSERT INTO MASTER_COOKS.BI_Dim_Turno (turno_hora_inicio, turno_hora_fin)
+INSERT INTO MASTER_COOKS.BI_Dim_Turno (turno_id ,turno_hora_inicio, turno_hora_fin)
 VALUES
 (1, 8, 12),
 (2, 12, 16),
@@ -201,17 +201,17 @@ SELECT DISTINCT
     tipo_descripcion
 FROM MASTER_COOKS.Tipo_Caja
 
---Poblar Fact_Ventas
-INSERT INTO MASTER_COOKS.BI_Fact_Ventas (tiempo_id, sucursal_id, cliente_id, empleado_id, turno_id, tipo_caja_id, importe_total, promedio_venta, cantidad_unidades)
-SELECT
+--Poblar Fact_Ventas --ANALIZR QUE ONDA CON IMPORTE TOTAL, CANTIDAD DE VENTAS Y UNIDADES, ESTA RARO
+INSERT INTO MASTER_COOKS.BI_Fact_Ventas (tiempo_id, sucursal_id, cliente_id, empleado_id, turno_id, tipo_caja_id, importe_total, cantidad_ventas, cantidad_unidades)
+SELECT DISTINCT
     dti.tiempo_id,
     dsu.sucursal_id,
 	dcl.cliente_id,
 	dem.empleado_id,
     dtu.turno_id,
     dtc.tipo_caja_id,
-    t.tick_total,
-	SUM(t.tick_total)/COUNT(distinct t.tick_numero+t.tick_sucursal_id+t.tick_tipo),
+    SUM(t.tick_total), --VER PORQUE LO CAMBIE Y NO SE SI ESTA BIEN
+	COUNT(*),  --VER PORQUE LO CAMBIE Y NO SE SI ESTA BIEN
     SUM(it.item_cantidad)
 FROM MASTER_COOKS.Ticket t
 JOIN MASTER_COOKS.BI_Dim_Tiempo dti ON dti.tiempo_id = CONCAT(YEAR(t.tick_fecha_hora), RIGHT('0' + CAST(MONTH(t.tick_fecha_hora) AS VARCHAR(2)), 2))
@@ -294,7 +294,7 @@ SELECT
     dt.anio,
     dt.mes,
     dl.localidad_nombre,
-	(SUM(fv.importe_total) / COUNT(*)) AS ticket_promedio
+	fv.importe_total / fv.cantidad_ventas
 FROM MASTER_COOKS.BI_Fact_Ventas fv
 JOIN MASTER_COOKS.BI_Dim_Tiempo dt ON fv.id_tiempo = dt.id_tiempo
 JOIN MASTER_COOKS.BI_Dim_Sucursal ds ON fv.id_sucursal = ds.id_sucursal
