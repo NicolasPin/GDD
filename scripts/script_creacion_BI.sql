@@ -35,6 +35,7 @@ CREATE TABLE MASTER_COOKS.BI_Dim_Cliente (
 	FOREIGN KEY (cliente_ubicacion) REFERENCES MASTER_COOKS.BI_Dim_Ubicacion(ubicacion_id)
 );
 
+-- Dimensión Empleado
 CREATE TABLE MASTER_COOKS.BI_Dim_Empleado (
     empleado_id VARCHAR(60) PRIMARY KEY,
     empleado_rango_etario DECIMAL(2,0),
@@ -84,7 +85,6 @@ CREATE TABLE MASTER_COOKS.BI_Fact_Ventas (
 CREATE TABLE MASTER_COOKS.BI_Fact_Promociones (
     categoria_id DECIMAL(8,0) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Categoria(categoria_id),
     tiempo_id VARCHAR(20) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Tiempo(tiempo_id),
-    --medio_pago_id VARCHAR(50) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Medio_Pago(medio_pago_id),
     monto_descuento DECIMAL(12,2),
     monto_descuento_promocion DECIMAL(12,2),
     tipo_descuento VARCHAR(30),
@@ -111,7 +111,7 @@ CREATE TABLE MASTER_COOKS.BI_Fact_Envio (
     PRIMARY KEY (tiempo_id, sucursal_id, cliente_id)
 );
 
--- Poblar las dimensiones 
+-- Poblar las dimensiones
 INSERT INTO MASTER_COOKS.BI_Dim_Tiempo (tiempo_id, tiempo_anio, tiempo_mes, tiempo_cuatrimestre)
 SELECT DISTINCT
     CONCAT(YEAR(tick_fecha_hora), RIGHT('0' + CAST(MONTH(tick_fecha_hora) AS VARCHAR(2)), 2)),
@@ -184,14 +184,14 @@ VALUES
 
 -- Poblar Dim_Medio_Pago
 INSERT INTO MASTER_COOKS.BI_Dim_Medio_Pago (medio_pago_id, medio_pago_tipo)
-SELECT DISTINCT 
-	medi_descripcion, 
+SELECT DISTINCT
+	medi_descripcion,
 	medi_tipo
 FROM MASTER_COOKS.Medio_De_Pago;
 
 -- Poblar Dim_Categoria
 INSERT INTO MASTER_COOKS.BI_Dim_Categoria (categoria_id)
-SELECT DISTINCT 
+SELECT DISTINCT
 	cate_codigo
 FROM MASTER_COOKS.Categoria;
 
@@ -221,51 +221,45 @@ JOIN MASTER_COOKS.BI_Dim_Empleado dem ON dem.empleado_id = t.tick_vendedor_id
 JOIN MASTER_COOKS.Item_Ticket it ON t.tick_numero = it.item_ticket_numero AND t.tick_tipo = it.item_tipo_id AND t.tick_sucursal_id = it.item_sucursal_id
 JOIN MASTER_COOKS.Caja caja ON caja.caja_sucursal_id = t.tick_sucursal_id AND t.tick_caja_numero = caja.caja_numero
 JOIN MASTER_COOKS.BI_Dim_Tipo_Caja dtc ON dtc.tipo_caja_id = caja.caja_tipo_id
-JOIN MASTER_COOKS.BI_Dim_Turno dtu ON ((DATEPART(HOUR, t.tick_fecha_hora)) >= dtu.turno_hora_inicio 
+JOIN MASTER_COOKS.BI_Dim_Turno dtu ON ((DATEPART(HOUR, t.tick_fecha_hora)) >= dtu.turno_hora_inicio
 										AND (DATEPART(HOUR, t.tick_fecha_hora)) < dtu.turno_hora_fin
 										AND (DATEPART(HOUR, t.tick_fecha_hora)) BETWEEN dtu.turno_hora_inicio AND dtu.turno_hora_fin)
 GROUP BY dti.tiempo_id, dsu.sucursal_id, dcl.cliente_id, dem.empleado_id, dtu.turno_id, dtc.tipo_caja_id;
 
+
 -- Poblar Fact_Promociones
-INSERT INTO MASTER_COOKS.BI_Fact_Promociones(id_ticket, id_categoria, id_tiempo, id_medio_pago, monto_descuento, monto_descuento_promocion, tipo_descuento)
-SELECT 
-    CONCAT(t.tick_numero, t.tick_tipo, t.tick_sucursal_id) as id_ticket,
-    cxs.catx_categoria_id as id_categoria,
-    CONCAT(YEAR(t.tick_fecha_hora), RIGHT('0' + CAST(MONTH(t.tick_fecha_hora) AS VARCHAR(2)), 2)) as id_tiempo,
-    p.pago_medio_de_pago_id,
-    t.tick_total_descuento_promocion + t.tick_total_descuento_aplicado_mp as monto_descuento,
-	t.tick_total_descuento_promocion as monto_descuento_promocion,
+INSERT INTO MASTER_COOKS.BI_Fact_Promociones(id_categoria, id_tiempo, monto_descuento, monto_descuento_promocion, tipo_descuento)
+SELECT DISTINCT
+    cxs.catx_categoria_id,
+    dti.tiempo_id,
+    t.tick_total_descuento_promocion + t.tick_total_descuento_aplicado_mp,
+	t.tick_total_descuento_promocion,
     CASE
         WHEN t.tick_total_descuento_promocion > 0 AND t.tick_total_descuento_aplicado_mp > 0 THEN 'Promoción y Medio de Pago'
         WHEN t.tick_total_descuento_promocion > 0 THEN 'Promoción'
         WHEN t.tick_total_descuento_aplicado_mp > 0 THEN 'Medio de Pago'
         ELSE 'Sin Descuento'
-    END as tipo_descuento
+    END
 FROM MASTER_COOKS.Ticket t
-JOIN MASTER_COOKS.Item_Ticket it ON t.tick_numero = it.item_ticket_numero AND t.tick_tipo = it.item_tipo_id AND t.tick_sucursal_id = it.item_sucursal_id
-JOIN MASTER_COOKS.Producto_X_Subcategoria pxs ON it.item_producto_codigo = pxs.prodx_producto_codigo AND it.item_producto_precio = pxs.prodx_producto_precio
-JOIN MASTER_COOKS.Categoria_X_Subcategoria cxs ON pxs.prodx_subcategoria_id = cxs.catx_subcategoria_id
-JOIN MASTER_COOKS.Pago p ON t.tick_numero = p.pago_ticket_numero AND t.tick_tipo = p.pago_ticket_tipo AND t.tick_sucursal_id = p.pago_ticket_sucursal
-WHERE t.tick_total_descuento_promocion > 0 OR t.tick_total_descuento_aplicado_mp > 0
-GROUP BY 
-    t.tick_numero, t.tick_tipo, t.tick_sucursal_id, 
-    cxs.catx_categoria_id, 
-    YEAR(t.tick_fecha_hora), MONTH(t.tick_fecha_hora),
-    p.pago_medio_de_pago_id,
-	t.tick_total_descuento_promocion,
-	t.tick_total_descuento_aplicado_mp;
+JOIN MASTER_COOKS.Item_Ticket it ON t.tick_numero = it.item_ticket_id AND t.tick_tipo = it.item_tipo_id AND t.tick_sucursal_id = it.item_sucursal_id
+JOIN MASTER_COOKS.Producto p ON it.item_producto_codigo = p.prod_codigo
+JOIN MASTER_COOKS.Producto_X_Subcategoria pxs ON p.prod_codigo = pxs.prodx_producto_codigo
+JOIN MASTER_COOKS.Subcategoria s ON pxs.prodx_subcategoria_id = s.subc_codigo
+JOIN MASTER_COOKS.Categoria_X_Subcategoria cxs ON s.subc_codigo = cxs.catx_subcategoria_id
+JOIN MASTER_COOKS.BI_Dim_Tiempo dti ON dti.tiempo_id = CONCAT(YEAR(t.tick_fecha_hora), RIGHT('0' + CAST(MONTH(t.tick_fecha_hora) AS VARCHAR(2)), 2))
+GROUP BY cxs.catx_categoria_id, dti.tiempo_id, t.tick_total_descuento_promocion, t.tick_total_descuento_aplicado_mp;
 
 
 -- Poblar Fact_Pagos
 INSERT INTO MASTER_COOKS.BI_Fact_Pagos ()
-SELECT 
+SELECT
 
 
 
 
 -- Poblar Fact_Envio
 INSERT INTO MASTER_COOKS.BI_Fact_Envio (id_tiempo, id_sucursal, id_rango_etario_cliente, id_cliente_localidad, costo_envio_total, cantidad_envios, envios_cumplidos)
-SELECT 
+SELECT
     CONCAT(YEAR(t.tick_fecha_hora), RIGHT('0' + CAST(MONTH(t.tick_fecha_hora) AS VARCHAR(2)), 2)) as id_tiempo,
     e.envi_ticket_sucursal as id_sucursal,
     CASE
@@ -282,7 +276,7 @@ FROM MASTER_COOKS.Envio e
 JOIN MASTER_COOKS.Ticket t ON e.envi_ticket_numero = t.tick_numero AND e.envi_ticket_tipo = t.tick_tipo AND e.envi_ticket_sucursal = t.tick_sucursal_id
 JOIN MASTER_COOKS.Cliente c ON t.tick_cliente_documento = c.clie_documento AND t.tick_cliente_apellido = c.clie_apellido
 JOIN MASTER_COOKS.Localidad l ON c.clie_localidad_id = l.loca_nombre
-GROUP BY 
+GROUP BY
     CONCAT(YEAR(t.tick_fecha_hora), RIGHT('0' + CAST(MONTH(t.tick_fecha_hora) AS VARCHAR(2)), 2)),
     e.envi_ticket_sucursal,
 	CONCAT(c.clie_documento, c.clie_apellido, l.loca_provincia_id, l.loca_nombre),
@@ -296,7 +290,7 @@ GROUP BY
 -- Crear vistas
 -- 1. Ticket Promedio mensual
 CREATE VIEW MASTER_COOKS.BI_VW_TicketPromedioMensual AS
-SELECT 
+SELECT
     dt.anio,
     dt.mes,
     dl.localidad_nombre,
@@ -371,7 +365,7 @@ FROM MASTER_COOKS.BI_Fact_Descuento fd
 JOIN MASTER_COOKS.BI_Dim_Tiempo dt ON fd.id_tiempo = dt.id_tiempo
 JOIN MASTER_COOKS.BI_Dim_Categoria dc ON fd.id_categoria = dc.id_categoria
 GROUP BY dt.anio, dt.cuatrimestre, dc.id_categoria
-ORDER BY 
+ORDER BY
     dt.anio,
     dt.cuatrimestre,
     SUM(fd.monto_descuento) DESC;
