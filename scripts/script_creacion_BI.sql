@@ -201,7 +201,7 @@ SELECT DISTINCT
     tipo_descripcion
 FROM MASTER_COOKS.Tipo_Caja
 
---Poblar Fact_Ventas --ANALIZR QUE ONDA CON IMPORTE TOTAL, CANTIDAD DE VENTAS Y UNIDADES, ESTA RARO
+--Poblar Fact_Ventas 
 INSERT INTO MASTER_COOKS.BI_Fact_Ventas (tiempo_id, sucursal_id, cliente_id, empleado_id, turno_id, tipo_caja_id, importe_total, cantidad_ventas, cantidad_unidades)
 SELECT DISTINCT
     dti.tiempo_id,
@@ -210,8 +210,8 @@ SELECT DISTINCT
 	dem.empleado_id,
     dtu.turno_id,
     dtc.tipo_caja_id,
-    SUM(t.tick_total), --VER PORQUE LO CAMBIE Y NO SE SI ESTA BIEN
-	COUNT(*),  --VER PORQUE LO CAMBIE Y NO SE SI ESTA BIEN
+    SUM(t.tick_total), 
+	COUNT(DISTINCT CONCAT(t.tick_numero,t.tick_sucursal_id,t.tick_tipo)),  
     SUM(it.item_cantidad)
 FROM MASTER_COOKS.Ticket t
 JOIN MASTER_COOKS.BI_Dim_Tiempo dti ON dti.tiempo_id = CONCAT(YEAR(t.tick_fecha_hora), RIGHT('0' + CAST(MONTH(t.tick_fecha_hora) AS VARCHAR(2)), 2))
