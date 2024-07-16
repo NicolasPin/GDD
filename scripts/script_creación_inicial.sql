@@ -255,6 +255,7 @@ create table MASTER_COOKS.Item_Ticket (
 	item_producto_precio decimal(10,2),
     item_cantidad decimal(4,0),
     item_precio decimal(10,2) null,
+	item_total decimal(18,2) null,
     primary key (item_tipo_id, item_sucursal_id, item_ticket_numero, item_producto_codigo, item_producto_precio, item_cantidad),
     foreign key (item_producto_codigo, item_producto_precio) references MASTER_COOKS.Producto(prod_codigo, prod_precio_unitario),
     foreign key (item_ticket_numero, item_tipo_id, item_sucursal_id) references MASTER_COOKS.Ticket(tick_numero, tick_tipo, tick_sucursal_id)
@@ -643,7 +644,7 @@ FROM gd_esquema.Maestra
 WHERE PRODUCTO_NOMBRE IS NOT NULL AND PROMO_CODIGO IS NOT NULL AND PRODUCTO_PRECIO IS NOT NULL AND PROMO_APLICADA_DESCUENTO IS NOT NULL;
 
 
-INSERT INTO MASTER_COOKS.Item_Ticket (item_tipo_id, item_sucursal_id, item_ticket_numero, item_producto_codigo, item_producto_precio, item_cantidad, item_precio)
+INSERT INTO MASTER_COOKS.Item_Ticket (item_tipo_id, item_sucursal_id, item_ticket_numero, item_producto_codigo, item_producto_precio, item_cantidad, item_precio, item_total)
 SELECT DISTINCT
     CAST(TICKET_TIPO_COMPROBANTE AS CHAR(1)),
     CAST(dbo.ExtractSucursal(SUCURSAL_NOMBRE) AS DECIMAL(6,0)),
@@ -651,7 +652,8 @@ SELECT DISTINCT
     CAST(dbo.ExtractProductoNombre(PRODUCTO_NOMBRE) AS DECIMAL(12,0)),
 	CAST(PRODUCTO_PRECIO AS DECIMAL(10,2)),
     CAST(TICKET_DET_CANTIDAD AS DECIMAL(4,0)),
-    CAST(TICKET_DET_PRECIO AS DECIMAL(10,2))
+    CAST(TICKET_DET_PRECIO AS DECIMAL(10,2)),
+	CAST(TICKET_DET_TOTAL AS DECIMAL(18,2))
 FROM gd_esquema.Maestra
 WHERE TICKET_TIPO_COMPROBANTE IS NOT NULL AND SUCURSAL_NOMBRE IS NOT NULL AND TICKET_NUMERO IS NOT NULL AND PRODUCTO_NOMBRE IS NOT NULL AND PRODUCTO_PRECIO IS NOT NULL AND TICKET_DET_CANTIDAD IS NOT NULL;
 
