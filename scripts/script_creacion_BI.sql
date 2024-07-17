@@ -57,11 +57,11 @@ CREATE TABLE MASTER_COOKS.BI_Dim_Medio_Pago (
     medio_pago_tipo VARCHAR(30)
 );
 
--- Dimensión de Productos
-CREATE TABLE MASTER_COOKS.BI_Dim_Producto (
-    producto_id VARCHAR(100) PRIMARY KEY,
-	producto_subcategoria DECIMAL(8,0),
-	producto_categoria DECIMAL(8,0)
+-- Dimensión de Categoria
+CREATE TABLE MASTER_COOKS.BI_Dim_Categoria (
+    categoria_id VARCHAR(20) PRIMARY KEY,
+	categoria_subcategoria DECIMAL(8,0),
+	categoria_nombre DECIMAL(8,0)
 );
 
 -- Dimensión Tipo Caja
@@ -85,13 +85,13 @@ CREATE TABLE MASTER_COOKS.BI_Fact_Ventas (
 
 -- Tabla de Hechos Promociones
 CREATE TABLE MASTER_COOKS.BI_Fact_Promociones (
-    producto_id VARCHAR(100) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Producto(producto_id),
+    categoria_id VARCHAR(20) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Categoria(categoria_id),
     tiempo_id VARCHAR(20) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Tiempo(tiempo_id),
     monto_descuento_promocion DECIMAL(12,2),
 	ticket_total DECIMAL(18,2),
 	cantidad_tickets DECIMAL(12,0),
 	promedio_porcentaje_descuento DECIMAL(3,2)
-    PRIMARY KEY (producto_id, tiempo_id)
+    PRIMARY KEY (categoria_id, tiempo_id)
 );
 
 -- Tabla de Hechos Pagos
@@ -192,15 +192,15 @@ SELECT DISTINCT
 	m.medi_tipo
 FROM MASTER_COOKS.Medio_De_Pago m;
 
--- Poblar Dim_Producto
-INSERT INTO MASTER_COOKS.BI_Dim_Producto (producto_id, producto_subcategoria, producto_categoria)
+-- Poblar Dim_Cateogria
+INSERT INTO MASTER_COOKS.BI_Dim_Categoria(categoria_id, categoria_subcategoria, categoria_nombre)
 SELECT DISTINCT
-	CONCAT(p.prod_codigo, pxs.prodx_subcategoria_id, cxs.catx_categoria_id),
-	pxs.prodx_subcategoria_id,
-	cxs.catx_categoria_id
-FROM MASTER_COOKS.Producto p
-JOIN MASTER_COOKS.Producto_X_Subcategoria pxs ON p.prod_codigo = pxs.prodx_producto_codigo
-JOIN MASTER_COOKS.Categoria_X_Subcategoria cxs ON pxs.prodx_subcategoria_id = cxs.catx_subcategoria_id;
+	CONCAT(cxs.catx_subcategoria_id, c.cate_codigo),
+    cxs.catx_subcategoria_id,
+	c.cate_codigo
+FROM MASTER_COOKS.Categoria c
+JOIN MASTER_COOKS.Categoria_X_Subcategoria cxs ON c.cate_codigo = cxs.catx_categoria_id;
+
 
 -- Poblar Dim_Tipo_Caja
 INSERT INTO MASTER_COOKS.BI_Dim_Tipo_Caja(tipo_caja_id)
@@ -233,10 +233,10 @@ JOIN MASTER_COOKS.BI_Dim_Turno dtu ON ((DATEPART(HOUR, t.tick_fecha_hora)) >= dt
 										AND (DATEPART(HOUR, t.tick_fecha_hora)) BETWEEN dtu.turno_hora_inicio AND dtu.turno_hora_fin)
 GROUP BY dti.tiempo_id, dsu.sucursal_id, dcl.cliente_id, dem.empleado_id, dtu.turno_id, dtc.tipo_caja_id;
 
--- Poblar Fact_Promociones
-INSERT INTO MASTER_COOKS.BI_Fact_Promociones(producto_id, tiempo_id, monto_descuento_promocion, ticket_total, cantidad_tickets, promedio_porcentaje_descuento)
+-- Poblar Fact_Promociones REVISAR
+INSERT INTO MASTER_COOKS.BI_Fact_Promociones(categoria_id, tiempo_id, monto_descuento_promocion, ticket_total, cantidad_tickets, promedio_porcentaje_descuento)
 SELECT DISTINCT
-	dp.producto_id,
+	dcat.categoria_id,
 	dti.tiempo_id,
 	SUM(t.tick_total_descuento_promocion),
 	SUM(it.item_total),
@@ -245,10 +245,15 @@ SELECT DISTINCT
 FROM MASTER_COOKS.Ticket t
 JOIN MASTER_COOKS.Item_Ticket it ON t.tick_numero = it.item_ticket_numero AND t.tick_tipo = it.item_tipo_id AND t.tick_sucursal_id = it.item_sucursal_id
 JOIN MASTER_COOKS.Promocion_X_Ticket pxt ON pxt.promx_item_ticket_id = it.item_ticket_numero AND pxt.promx_item_tipo = it.item_tipo_id AND pxt.promx_item_sucursal_id = it.item_sucursal_id
-JOIN MASTER_COOKS.BI_Dim_Producto dp ON dp.producto_id = it.item_producto_codigo
+JOIN MASTER_COOKS.Producto_X_Subcategoria pxs ON pxs.prodx_producto_codigo = it.item_producto_codigo
+JOIN MASTER_COOKS.BI_Dim_Categoria dcat ON dcat.categoria_subcategoria = pxs.prodx_subcategoria_id 
 JOIN MASTER_COOKS.BI_Dim_Tiempo dti ON dti.tiempo_id = CONCAT(YEAR(t.tick_fecha_hora), RIGHT('0' + CAST(MONTH(t.tick_fecha_hora) AS VARCHAR(2)), 2))
-GROUP BY dp.producto_id, dti.tiempo_id;
+GROUP BY dcat.categoria_id, dti.tiempo_id;
 
+
+
+select distinct promx_item_ticket_id from MASTER_COOKS.Promocion_X_Ticket order by promx_item_ticket_id
+SELECT * FROM MASTER_COOKS.Item_Ticket order by item_ticket_numero
 -- Poblar Fact_Pagos
 INSERT INTO MASTER_COOKS.BI_Fact_Pagos ()
 SELECT
