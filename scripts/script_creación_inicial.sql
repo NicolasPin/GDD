@@ -179,15 +179,10 @@ create table MASTER_COOKS.Categoria (
 )
 
 create table MASTER_COOKS.Subcategoria (
-    subc_codigo decimal(8,0) primary key
-)
-
-create table MASTER_COOKS.Categoria_X_Subcategoria (
-	catx_categoria_id decimal(8,0),
-	catx_subcategoria_id decimal(8,0),
-	primary key (catx_categoria_id, catx_subcategoria_id),
-	foreign key (catx_categoria_id) references MASTER_COOKS.Categoria(cate_codigo),
-	foreign key (catx_subcategoria_id) references MASTER_COOKS.Subcategoria(subc_codigo)
+    subc_id int identity (1,1) primary key,
+	subc_categoria decimal(8,0),
+	subc_codigo decimal(8,0) 
+	foreign key (subc_categoria) references MASTER_COOKS.Categoria(cate_codigo)
 )
 
 create table MASTER_COOKS.Marca (
@@ -214,36 +209,22 @@ CREATE TABLE MASTER_COOKS.Promocion (
 )
 
 CREATE TABLE MASTER_COOKS.Producto (
-    prod_codigo decimal(12,0),
+    prod_id int identity (1,1) primary key,
+	prod_subcategoria_id int,
+	prod_marca_id decimal(12,0),
+	prod_codigo decimal(12,0),
     prod_precio_unitario decimal(10,2),
-	primary key (prod_codigo, prod_precio_unitario)
+	foreign key (prod_marca_id) references MASTER_COOKS.Marca(marc_id),
+	foreign key (prod_subcategoria_id) references MASTER_COOKS.Subcategoria(subc_id)
 )
 
-CREATE TABLE MASTER_COOKS.Marca_X_Producto (
-    marcx_producto_codigo decimal(12,0),
-	marcx_producto_precio decimal(10,2),
-    marcx_marca_id decimal(12,0),
-	primary key (marcx_producto_codigo, marcx_producto_precio, marcx_marca_id),
-	foreign key (marcx_producto_codigo, marcx_producto_precio) references MASTER_COOKS.Producto(prod_codigo, prod_precio_unitario),
-	foreign key (marcx_marca_id) references MASTER_COOKS.Marca(marc_id)
-)
-
-CREATE TABLE MASTER_COOKS.Producto_X_Subcategoria (
-	prodx_producto_codigo decimal(12,0),
-	prodx_producto_precio decimal(10,2),
-	prodx_subcategoria_id decimal(8,0),
-	primary key (prodx_producto_codigo, prodx_producto_precio, prodx_subcategoria_id),
-	foreign key (prodx_producto_codigo, prodx_producto_precio) references MASTER_COOKS.Producto(prod_codigo, prod_precio_unitario),
-	foreign key (prodx_subcategoria_id) references MASTER_COOKS.Subcategoria(subc_codigo)
-)
 
 CREATE TABLE MASTER_COOKS.Rebaja_Producto (
-    reba_producto_codigo decimal(12,0),
-	reba_producto_precio decimal(10,2),
+    reba_producto_id int,
     reba_promocion_id decimal(4,0),
     reba_prod_promocion_aplicada decimal(8,2),
-    primary key (reba_producto_codigo, reba_producto_precio, reba_promocion_id, reba_prod_promocion_aplicada),
-    foreign key (reba_producto_codigo, reba_producto_precio) references MASTER_COOKS.Producto(prod_codigo, prod_precio_unitario),
+    primary key (reba_producto_id, reba_promocion_id, reba_prod_promocion_aplicada),
+    foreign key (reba_producto_id) references MASTER_COOKS.Producto(prod_id),
     foreign key (reba_promocion_id) references MASTER_COOKS.Promocion(prom_codigo)
 )
 
@@ -251,13 +232,12 @@ create table MASTER_COOKS.Item_Ticket (
     item_tipo_id char(1),
     item_sucursal_id decimal(6,0),
     item_ticket_numero decimal(18,0),
-    item_producto_codigo decimal(12,0),
-	item_producto_precio decimal(10,2),
+    item_producto_id int,
     item_cantidad decimal(4,0),
     item_precio decimal(10,2) null,
 	item_total decimal(18,2) null,
-    primary key (item_tipo_id, item_sucursal_id, item_ticket_numero, item_producto_codigo, item_producto_precio, item_cantidad),
-    foreign key (item_producto_codigo, item_producto_precio) references MASTER_COOKS.Producto(prod_codigo, prod_precio_unitario),
+    primary key (item_tipo_id, item_sucursal_id, item_ticket_numero, item_producto_id, item_cantidad),
+    foreign key (item_producto_id) references MASTER_COOKS.Producto(prod_id),
     foreign key (item_ticket_numero, item_tipo_id, item_sucursal_id) references MASTER_COOKS.Ticket(tick_numero, tick_tipo, tick_sucursal_id)
 )
 
@@ -266,13 +246,12 @@ create table MASTER_COOKS.Promocion_X_Ticket (
     promx_item_tipo char(1),
     promx_item_sucursal_id decimal(6,0),
     promx_item_ticket_id decimal(18,0),
-	promx_item_prod_codigo decimal(12,0),
-	promx_item_prod_precio decimal(10,2),
+	promx_item_prod_id int,
 	promx_item_cantidad decimal(4),
     promx_item_promocion_aplicada decimal(10,2)
-    primary key (promx_promocion_id, promx_item_tipo, promx_item_sucursal_id, promx_item_ticket_id, promx_item_prod_codigo, promx_item_prod_precio, promx_item_cantidad, promx_item_promocion_aplicada),
+    primary key (promx_promocion_id, promx_item_tipo, promx_item_sucursal_id, promx_item_ticket_id, promx_item_prod_id, promx_item_cantidad, promx_item_promocion_aplicada),
     foreign key (promx_promocion_id) references MASTER_COOKS.Promocion(prom_codigo),
-    foreign key (promx_item_tipo, promx_item_sucursal_id, promx_item_ticket_id, promx_item_prod_codigo, promx_item_prod_precio, promx_item_cantidad) references MASTER_COOKS.Item_Ticket(item_tipo_id, item_sucursal_id, item_ticket_numero, item_producto_codigo, item_producto_precio, item_cantidad)
+    foreign key (promx_item_tipo, promx_item_sucursal_id, promx_item_ticket_id, promx_item_prod_id, promx_item_cantidad) references MASTER_COOKS.Item_Ticket(item_tipo_id, item_sucursal_id, item_ticket_numero, item_producto_id, item_cantidad)
 )
 
 ---------FUNCTIONS
@@ -562,19 +541,12 @@ FROM gd_esquema.Maestra
 WHERE PRODUCTO_CATEGORIA IS NOT NULL;
 
 
-INSERT INTO MASTER_COOKS.Subcategoria (subc_codigo)
+INSERT INTO MASTER_COOKS.Subcategoria (subc_categoria, subc_codigo)
 SELECT DISTINCT
+	CAST(dbo.ExtractCategoria(PRODUCTO_CATEGORIA) AS DECIMAL(8,0)),
     CAST(dbo.ExtractSubCategoria(PRODUCTO_SUB_CATEGORIA) AS DECIMAL(8,0))
 FROM gd_esquema.Maestra
-WHERE PRODUCTO_SUB_CATEGORIA IS NOT NULL;
-
-
-INSERT INTO MASTER_COOKS.Categoria_X_Subcategoria(catx_subcategoria_id, catx_categoria_id)
-SELECT DISTINCT
-    CAST(dbo.ExtractSubCategoria(PRODUCTO_SUB_CATEGORIA) AS DECIMAL(8,0)),
-    CAST(dbo.ExtractCategoria(PRODUCTO_CATEGORIA) AS DECIMAL(8,0))
-FROM gd_esquema.Maestra
-WHERE PRODUCTO_SUB_CATEGORIA IS NOT NULL and PRODUCTO_CATEGORIA IS NOT NULL;
+WHERE PRODUCTO_SUB_CATEGORIA IS NOT NULL AND PRODUCTO_CATEGORIA IS NOT NULL;
 
 
 INSERT INTO MASTER_COOKS.Marca (marc_id)
@@ -608,49 +580,37 @@ FROM gd_esquema.Maestra
 WHERE PROMO_CODIGO IS NOT NULL;
 
 
-INSERT INTO MASTER_COOKS.Producto (prod_codigo, prod_precio_unitario)
+INSERT INTO MASTER_COOKS.Producto (prod_subcategoria_id, prod_marca_id, prod_codigo, prod_precio_unitario)
 SELECT DISTINCT
+	(SELECT subc_id FROM MASTER_COOKS.Subcategoria WHERE subc_codigo = CAST(dbo.ExtractSubCategoria(PRODUCTO_SUB_CATEGORIA) AS DECIMAL(8,0)) AND subc_categoria = CAST(dbo.ExtractCategoria(PRODUCTO_CATEGORIA) AS DECIMAL(8,0))),
+	CAST(dbo.ExtractProductoMarca(PRODUCTO_MARCA) AS DECIMAL(12,0)),
 	CAST(dbo.ExtractProductoNombre(PRODUCTO_NOMBRE) AS DECIMAL(12,0)),
     CAST(PRODUCTO_PRECIO AS DECIMAL(10,2))
 FROM gd_esquema.Maestra
-WHERE PRODUCTO_NOMBRE IS NOT NULL AND PRODUCTO_PRECIO IS NOT NULL;
+WHERE PRODUCTO_NOMBRE IS NOT NULL;
 
 
-INSERT INTO MASTER_COOKS.Marca_X_Producto(marcx_producto_codigo, marcx_producto_precio, marcx_marca_id)
+INSERT INTO MASTER_COOKS.Rebaja_Producto (reba_producto_id, reba_promocion_id, reba_prod_promocion_aplicada)
 SELECT DISTINCT
-	CAST(dbo.ExtractProductoNombre(PRODUCTO_NOMBRE) AS DECIMAL(12,0)),
-	CAST(PRODUCTO_PRECIO AS DECIMAL(10,2)),
-    CAST(dbo.ExtractProductoMarca(PRODUCTO_MARCA) AS DECIMAL(12,0))
-FROM gd_esquema.Maestra
-WHERE PRODUCTO_NOMBRE IS NOT NULL AND PRODUCTO_MARCA IS NOT NULL AND PRODUCTO_PRECIO IS NOT NULL;
-
-
-INSERT INTO MASTER_COOKS.Producto_X_Subcategoria (prodx_producto_codigo, prodx_producto_precio, prodx_subcategoria_id)
-SELECT DISTINCT
-	CAST(dbo.ExtractProductoNombre(PRODUCTO_NOMBRE) AS DECIMAL(12,0)),
-	CAST(PRODUCTO_PRECIO AS DECIMAL(10,2)),
-	CAST(dbo.ExtractSubCategoria(PRODUCTO_SUB_CATEGORIA) AS DECIMAL(8,0))
-FROM gd_esquema.Maestra
-WHERE PRODUCTO_NOMBRE IS NOT NULL AND PRODUCTO_SUB_CATEGORIA IS NOT NULL AND PRODUCTO_PRECIO IS NOT NULL;
-
-
-INSERT INTO MASTER_COOKS.Rebaja_Producto (reba_producto_codigo, reba_producto_precio, reba_promocion_id, reba_prod_promocion_aplicada)
-SELECT DISTINCT
-    CAST(dbo.ExtractProductoNombre(PRODUCTO_NOMBRE) AS DECIMAL(12,0)),
-	CAST(PRODUCTO_PRECIO AS DECIMAL(10,2)),
+    (SELECT DISTINCT prod_id FROM MASTER_COOKS.Producto 
+		JOIN MASTER_COOKS.Subcategoria ON prod_subcategoria_id = subc_id
+		JOIN MASTER_COOKS.Categoria ON subc_categoria = cate_codigo
+		WHERE prod_codigo = CAST(dbo.ExtractProductoNombre(PRODUCTO_NOMBRE) AS DECIMAL(12,0)) AND subc_codigo = CAST(dbo.ExtractSubCategoria(PRODUCTO_SUB_CATEGORIA) AS DECIMAL(8,0)) AND cate_codigo = CAST(dbo.ExtractCategoria(PRODUCTO_CATEGORIA) AS DECIMAL(8,0))) ,
     CAST(PROMO_CODIGO AS DECIMAL(4,0)),
     CAST(PROMO_APLICADA_DESCUENTO AS DECIMAL(8,2))
 FROM gd_esquema.Maestra
-WHERE PRODUCTO_NOMBRE IS NOT NULL AND PROMO_CODIGO IS NOT NULL AND PRODUCTO_PRECIO IS NOT NULL AND PROMO_APLICADA_DESCUENTO IS NOT NULL;
+WHERE PROMO_CODIGO IS NOT NULL AND PRODUCTO_MARCA IS NOT NULL AND PROMO_APLICADA_DESCUENTO IS NOT NULL;
 
 
-INSERT INTO MASTER_COOKS.Item_Ticket (item_tipo_id, item_sucursal_id, item_ticket_numero, item_producto_codigo, item_producto_precio, item_cantidad, item_precio, item_total)
+INSERT INTO MASTER_COOKS.Item_Ticket (item_tipo_id, item_sucursal_id, item_ticket_numero, item_producto_id, item_cantidad, item_precio, item_total)
 SELECT DISTINCT
     CAST(TICKET_TIPO_COMPROBANTE AS CHAR(1)),
     CAST(dbo.ExtractSucursal(SUCURSAL_NOMBRE) AS DECIMAL(6,0)),
     CAST(TICKET_NUMERO AS DECIMAL(18,0)),
-    CAST(dbo.ExtractProductoNombre(PRODUCTO_NOMBRE) AS DECIMAL(12,0)),
-	CAST(PRODUCTO_PRECIO AS DECIMAL(10,2)),
+    (SELECT DISTINCT prod_id FROM MASTER_COOKS.Producto 
+		JOIN MASTER_COOKS.Subcategoria ON prod_subcategoria_id = subc_id
+		JOIN MASTER_COOKS.Categoria ON subc_categoria = cate_codigo
+		WHERE prod_codigo = CAST(dbo.ExtractProductoNombre(PRODUCTO_NOMBRE) AS DECIMAL(12,0)) AND subc_codigo = CAST(dbo.ExtractSubCategoria(PRODUCTO_SUB_CATEGORIA) AS DECIMAL(8,0)) AND cate_codigo = CAST(dbo.ExtractCategoria(PRODUCTO_CATEGORIA) AS DECIMAL(8,0))),
     CAST(TICKET_DET_CANTIDAD AS DECIMAL(4,0)),
     CAST(TICKET_DET_PRECIO AS DECIMAL(10,2)),
 	CAST(TICKET_DET_TOTAL AS DECIMAL(18,2))
@@ -658,15 +618,17 @@ FROM gd_esquema.Maestra
 WHERE TICKET_TIPO_COMPROBANTE IS NOT NULL AND SUCURSAL_NOMBRE IS NOT NULL AND TICKET_NUMERO IS NOT NULL AND PRODUCTO_NOMBRE IS NOT NULL AND PRODUCTO_PRECIO IS NOT NULL AND TICKET_DET_CANTIDAD IS NOT NULL;
 
 
-INSERT INTO MASTER_COOKS.Promocion_X_Ticket (promx_promocion_id, promx_item_tipo, promx_item_sucursal_id, promx_item_ticket_id, promx_item_prod_codigo, promx_item_prod_precio, promx_item_cantidad, promx_item_promocion_aplicada)
+INSERT INTO MASTER_COOKS.Promocion_X_Ticket (promx_promocion_id, promx_item_tipo, promx_item_sucursal_id, promx_item_ticket_id, promx_item_prod_id, promx_item_cantidad, promx_item_promocion_aplicada)
 SELECT DISTINCT
     CAST(PROMO_CODIGO AS DECIMAL(4,0)),
     CAST(TICKET_TIPO_COMPROBANTE AS CHAR(1)),
     CAST(dbo.ExtractSucursal(SUCURSAL_NOMBRE) AS DECIMAL(6,0)),
     CAST(TICKET_NUMERO AS DECIMAL(18,0)),
-	CAST(dbo.ExtractProductoNombre(PRODUCTO_NOMBRE) AS DECIMAL(12,0)),
-	CAST(TICKET_DET_PRECIO AS DECIMAL(10,2)),
+	(SELECT DISTINCT prod_id FROM MASTER_COOKS.Producto 
+		JOIN MASTER_COOKS.Subcategoria ON prod_subcategoria_id = subc_id
+		JOIN MASTER_COOKS.Categoria ON subc_categoria = cate_codigo
+		WHERE prod_codigo = CAST(dbo.ExtractProductoNombre(PRODUCTO_NOMBRE) AS DECIMAL(12,0)) AND subc_codigo = CAST(dbo.ExtractSubCategoria(PRODUCTO_SUB_CATEGORIA) AS DECIMAL(8,0)) AND cate_codigo = CAST(dbo.ExtractCategoria(PRODUCTO_CATEGORIA) AS DECIMAL(8,0))),
 	CAST(TICKET_DET_CANTIDAD AS DECIMAL(4,0)),
     CAST(PROMO_APLICADA_DESCUENTO AS DECIMAL(10,2))
 FROM gd_esquema.Maestra
-WHERE PROMO_CODIGO IS NOT NULL AND TICKET_TIPO_COMPROBANTE  IS NOT NULL AND  SUCURSAL_NOMBRE IS NOT NULL AND TICKET_NUMERO IS NOT NULL AND PRODUCTO_NOMBRE IS NOT NULL AND TICKET_DET_PRECIO IS NOT NULL AND TICKET_DET_CANTIDAD IS NOT NULL AND PROMO_APLICADA_DESCUENTO IS NOT NULL;
+WHERE PROMO_CODIGO IS NOT NULL AND TICKET_TIPO_COMPROBANTE  IS NOT NULL AND  SUCURSAL_NOMBRE IS NOT NULL AND TICKET_NUMERO IS NOT NULL AND PRODUCTO_NOMBRE IS NOT NULL AND TICKET_DET_CANTIDAD IS NOT NULL AND PROMO_APLICADA_DESCUENTO IS NOT NULL;
