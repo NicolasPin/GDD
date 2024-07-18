@@ -340,17 +340,17 @@ BEGIN
 END
 GO
 
-CREATE FUNCTION dbo.ExtractClienteRangoEtario(@fechaCliente DATE, @fechaActual DATE)
+CREATE FUNCTION dbo.ExtractRangoEtario(@fecha DATE, @fechaActual DATE)
 RETURNS DECIMAL(2,0)
 AS
 BEGIN
     DECLARE @rango DECIMAL(2,0);
 
-    IF DATEDIFF(YEAR, @fechaCliente, @fechaActual) < 25
+    IF DATEDIFF(YEAR, @fecha, @fechaActual) < 25
         SET @rango = 1;
-    ELSE IF DATEDIFF(YEAR, @fechaCliente, @fechaActual) BETWEEN 25 AND 34 -- Ajustado el límite superior a 34 para evitar ambigüedades
+    ELSE IF DATEDIFF(YEAR, @fecha, @fechaActual) BETWEEN 25 AND 34 -- Ajustado el límite superior a 34 para evitar ambigüedades
         SET @rango = 2;
-    ELSE IF DATEDIFF(YEAR, @fechaCliente, @fechaActual) BETWEEN 35 AND 49 -- Ajustado el límite superior a 49 para evitar ambigüedades
+    ELSE IF DATEDIFF(YEAR, @fecha, @fechaActual) BETWEEN 35 AND 49 -- Ajustado el límite superior a 49 para evitar ambigüedades
         SET @rango = 3;
     ELSE
         SET @rango = 4;

@@ -31,7 +31,7 @@ DROP FUNCTION IF EXISTS dbo.ExtractSubCategoria;
 DROP FUNCTION IF EXISTS dbo.ExtractProductoNombre;
 DROP FUNCTION IF EXISTS dbo.ExtractProductoMarca;
 DROP FUNCTION IF EXISTS dbo.ExtractCategoria;
-DROP FUNCTION IF EXISTS dbo.ExtractClienteRangoEtario;
+DROP FUNCTION IF EXISTS dbo.ExtractRangoEtario;
 
 
 -------------------------
@@ -59,7 +59,7 @@ DROP TABLE IF EXISTS MASTER_COOKS.BI_Fact_Ventas;
 
 -- Eliminar dimensiones
 DROP TABLE IF EXISTS MASTER_COOKS.BI_Dim_Tipo_Caja;
-DROP TABLE IF EXISTS MASTER_COOKS.BI_Dim_Cliente;
+DROP TABLE IF EXISTS MASTER_COOKS.BI_Dim_Categoria;
 DROP TABLE IF EXISTS MASTER_COOKS.BI_Dim_Medio_Pago;
 DROP TABLE IF EXISTS MASTER_COOKS.BI_Dim_Categoria;
 DROP TABLE IF EXISTS MASTER_COOKS.BI_Dim_Turno;

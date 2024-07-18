@@ -150,12 +150,7 @@ INSERT INTO MASTER_COOKS.BI_Dim_Cliente (cliente_id, cliente_ubicacion, cliente_
 SELECT DISTINCT
     CONCAT(c.clie_documento, c.clie_apellido),
 	CONCAT(c.clie_provincia_id, c.clie_localidad_id),
-	CASE
-        WHEN DATEDIFF(YEAR, c.clie_fecha_nacimiento, t.tick_fecha_hora) < 25 THEN 1
-        WHEN DATEDIFF(YEAR, c.clie_fecha_nacimiento, t.tick_fecha_hora) BETWEEN 25 AND 35 THEN 2
-        WHEN DATEDIFF(YEAR, c.clie_fecha_nacimiento, t.tick_fecha_hora) BETWEEN 35 AND 50 THEN 3
-        ELSE 4
-    END
+	dbo.ExtractRangoEtario(c.clie_fecha_nacimiento, t.tick_fecha_hora)
 FROM MASTER_COOKS.Cliente c
 JOIN MASTER_COOKS.Ticket t ON t.tick_cliente_documento = c.clie_documento and t.tick_cliente_apellido = c.clie_apellido;
 
@@ -170,7 +165,7 @@ FROM MASTER_COOKS.Sucursal s;
 INSERT INTO MASTER_COOKS.BI_Dim_Empleado (empleado_id, empleado_rango_etario, empleado_sucursal)
 SELECT DISTINCT
     e.empl_legajo,
-	dbo.ExtractClienteRangoEtario(e.empl_fecha_nacimiento, t.tick_fecha_hora),
+	dbo.ExtractRangoEtario(e.empl_fecha_nacimiento, t.tick_fecha_hora),
 	e.empl_sucursal_id
 FROM MASTER_COOKS.Empleado e
 JOIN MASTER_COOKS.Ticket t ON t.tick_vendedor_id = e.empl_legajo
@@ -197,7 +192,6 @@ SELECT DISTINCT
 	c.cate_codigo
 FROM MASTER_COOKS.Categoria c
 JOIN MASTER_COOKS.Subcategoria s ON s.subc_categoria = c.cate_codigo
-
 
 -- Poblar Dim_Tipo_Caja
 INSERT INTO MASTER_COOKS.BI_Dim_Tipo_Caja(tipo_caja_id)
@@ -254,7 +248,7 @@ SELECT
 
 
 -- Poblar Fact_Envio
-INSERT INTO MASTER_COOKS.BI_Fact_Envio ( tiempo_id, sucursal_id, rango_id, cliente_id, costo_envio_total, cantidad_envios, envios_cumplidos)
+INSERT INTO MASTER_COOKS.BI_Fact_Envio (tiempo_id, sucursal_id, rango_id, cliente_id, costo_envio_total, cantidad_envios, envios_cumplidos)
 SELECT
     dti.tiempo_id,
     dsuc.sucursal_id,
