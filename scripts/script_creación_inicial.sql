@@ -359,6 +359,25 @@ BEGIN
 END
 GO
 
+CREATE FUNCTION devolverImporteDeCuotas (@importe DECIMAL(18,2), @cuotas VARCHAR(60))
+RETURNS DECIMAL(18,2)
+AS
+BEGIN
+    DECLARE @resultado DECIMAL(18,2);
+
+    IF @cuotas IS NULL
+    BEGIN
+        SET @resultado = 0;
+    END
+    ELSE
+    BEGIN
+        SET @resultado = @importe;
+    END
+
+    RETURN @resultado;
+END
+GO
+
 -----------------INSERTS
 INSERT INTO MASTER_COOKS.Provincia(prov_nombre)
 SELECT DISTINCT

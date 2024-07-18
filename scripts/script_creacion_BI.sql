@@ -101,7 +101,11 @@ CREATE TABLE MASTER_COOKS.BI_Fact_Pagos (
     medio_pago_id VARCHAR(50) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Medio_Pago(medio_pago_id),
 	sucursal_id DECIMAL(6,0) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Sucursal(sucursal_id),
 	cliente_id VARCHAR(50) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Cliente(cliente_id),
-	PRIMARY KEY (tiempo_id, medio_pago_id, sucursal_id, cliente_id)
+	rango_id DECIMAL(2,0) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Rango_Etario(rango_id),
+	importe_pago_en_cuotas DECIMAL(12,2),
+	importe_pago_total DECIMAL(12,2),
+	descuento_total DECIMAL(12,2)
+	PRIMARY KEY (tiempo_id, medio_pago_id, sucursal_id, cliente_id, rango_id)
 );
 
 -- Tabla de Hechos Envíos
@@ -243,8 +247,25 @@ JOIN MASTER_COOKS.BI_Dim_Tiempo dti ON dti.tiempo_id = CONCAT(YEAR(t.tick_fecha_
 GROUP BY dcat.categoria_id, dti.tiempo_id;
 
 -- Poblar Fact_Pagos
-INSERT INTO MASTER_COOKS.BI_Fact_Pagos ()
+INSERT INTO MASTER_COOKS.BI_Fact_Pagos (tiempo_id, medio_pago_id, sucursal_id, cliente_id, rango_id, importe_pago_en_cuotas, importe_pago_total, descuento_total)
 SELECT
+	dti.tiempo_id,
+	p.pago_medio_de_pago_id,
+	dsu.sucursal_id,
+	dcl.cliente_id,
+	dran.rango_id,
+	SUM(dbo.devolverImporteDeCuotas(p.pago_importe, dp.deta_pago_id)),
+	SUM(p.pago_importe),
+	SUM(p.pago_desc_aplicado_mp)
+FROM MASTER_COOKS.Pago p
+JOIN MASTER_COOKS.BI_Dim_Tiempo dti ON dti.tiempo_id = CONCAT(YEAR(p.pago_fecha), RIGHT('0' + CAST(MONTH(p.pago_fecha) AS VARCHAR(2)), 2))
+JOIN MASTER_COOKS.BI_Dim_Sucursal dsu ON dsu.sucursal_id = p.pago_ticket_sucursal
+JOIN MASTER_COOKS.Ticket t ON t.tick_numero = p.pago_ticket_numero AND t.tick_sucursal_id = p.pago_ticket_sucursal AND t.tick_tipo = p.pago_ticket_tipo
+JOIN MASTER_COOKS.BI_Dim_Cliente dcl ON dcl.cliente_id = CONCAT(t.tick_cliente_documento, t.tick_cliente_apellido)
+JOIN MASTER_COOKS.BI_Dim_Rango_Etario dran ON dran.rango_id = dcl.cliente_rango_etario
+LEFT JOIN MASTER_COOKS.Detalle_Pago dp ON dp.deta_pago_id = p.pago_id
+LEFT JOIN MASTER_COOKS.Descuento_Aplicado_Por_MP damp ON damp.descx_pago_id = p.pago_id
+GROUP BY dti.tiempo_id, p.pago_medio_de_pago_id, dsu.sucursal_id, dcl.cliente_id, dran.rango_id
 
 
 -- Poblar Fact_Envio
@@ -269,42 +290,45 @@ GROUP BY dti.tiempo_id, dsuc.sucursal_id, dran.rango_id, dcl.cliente_id
 -- Crear vistas
 -- 1. Ticket Promedio mensual
 CREATE VIEW MASTER_COOKS.BI_VW_TicketPromedioMensual AS
-SELECT
-    dt.anio,
-    dt.mes,
-    dl.localidad_nombre,
-	fv.importe_total / fv.cantidad_ventas
+SELECT DISTINCT 
+    u.ubicacion_localidad as localidad, 
+    t.tiempo_anio as anio, 
+    t.tiempo_mes as mes, 
+    SUM(fv.importe_total) / SUM(fv.cantidad_ventas) AS valor_promedio_de_ventas
 FROM MASTER_COOKS.BI_Fact_Ventas fv
-JOIN MASTER_COOKS.BI_Dim_Tiempo dt ON fv.id_tiempo = dt.id_tiempo
-JOIN MASTER_COOKS.BI_Dim_Sucursal ds ON fv.id_sucursal = ds.id_sucursal
-JOIN MASTER_COOKS.BI_Dim_Localidad dl ON ds.sucursal_localidad_id = dl.id_localidad
-GROUP BY dt.anio, dt.mes, dl.localidad_nombre;
-GO
+JOIN MASTER_COOKS.BI_Dim_Sucursal s ON s.sucursal_id = fv.sucursal_id
+JOIN MASTER_COOKS.BI_Dim_Tiempo t ON t.tiempo_id = fv.tiempo_id
+JOIN MASTER_COOKS.BI_Dim_Ubicacion u ON u.ubicacion_id = s.sucursal_ubicacion
+GROUP BY 
+    u.ubicacion_localidad, 
+    t.tiempo_anio, 
+    t.tiempo_mes
 -- 2. Cantidad unidades promedio
 CREATE VIEW MASTER_COOKS.BI_VW_UnidadesPromedioPorTurno AS
 SELECT
-    dt.anio,
-    dt.cuatrimestre,
-    dtur.id_turno,
-	(fv.cantidad_unidades / COUNT(*)) as unidades_promedio
+    dt.tiempo_anio,
+    dt.tiempo_cuatrimestre,
+    dtur.turno_id,
+	(sum(fv.cantidad_unidades) / sum(fv.cantidad_ventas)) as unidades_promedio
 FROM MASTER_COOKS.BI_Fact_Ventas fv
-JOIN MASTER_COOKS.BI_Dim_Tiempo dt ON fv.id_tiempo = dt.id_tiempo
-JOIN MASTER_COOKS.BI_Dim_Turno dtur ON fv.id_turno = dtur.id_turno
-GROUP BY dt.anio, dt.cuatrimestre, dtur.id_turno
+JOIN MASTER_COOKS.BI_Dim_Tiempo dt ON fv.tiempo_id = dt.tiempo_id
+JOIN MASTER_COOKS.BI_Dim_Turno dtur ON fv.turno_id = dtur.turno_id
+GROUP BY dt.tiempo_anio, dt.tiempo_cuatrimestre, dtur.turno_id
 GO
+
 -- 3. Porcentaje anual de ventas por rango etario del cliente y tipo de caja
 CREATE VIEW MASTER_COOKS.BI_VW_PorcentajeVentasRangoEtarioEmpleado AS
 SELECT
-    dt.anio,
-    dt.cuatrimestre,
-    dre.descripcion AS rango_etario_empleado,
-    dc.tipo_caja,
-    COUNT(*) * 100.0 / (SELECT COUNT(*) from BI_Fact_Ventas) AS porcentaje_ventas
+    dt.tiempo_anio,
+    dt.tiempo_cuatrimestre,
+    de.empleado_rango_etario AS rango_etario_empleado,
+    dc.tipo_caja_id,
+    SUM(fv.cantidad_ventas)/SUM(fv.importe_total) as porcentaje_anual_de_ventas
 FROM MASTER_COOKS.BI_Fact_Ventas fv
-JOIN MASTER_COOKS.BI_Dim_Tiempo dt ON fv.id_tiempo = dt.id_tiempo
-JOIN MASTER_COOKS.BI_Dim_Rango_Etario_Empleado dre ON fv.id_rango_etario_empleado = dre.id_rango_etario_empleado
-JOIN MASTER_COOKS.BI_Dim_Caja dc ON fv.id_caja = dc.id_caja
-GROUP BY dt.anio, dt.cuatrimestre, dre.descripcion, dc.tipo_caja;
+JOIN MASTER_COOKS.BI_Dim_Tiempo dt ON fv.tiempo_id = dt.tiempo_id
+JOIN MASTER_COOKS.BI_Dim_Empleado de ON de.empleado_id = fv.empleado_id
+JOIN MASTER_COOKS.BI_Dim_Tipo_Caja dc ON fv.tipo_caja_id = dc.tipo_caja_id
+GROUP BY dt.tiempo_anio, dt.tiempo_cuatrimestre, de.empleado_rango_etario, dc.tipo_caja_id;
 GO
 
 -- 4. Cantidad de ventas por turno y localidad
