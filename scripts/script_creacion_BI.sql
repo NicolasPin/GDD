@@ -108,6 +108,7 @@ CREATE TABLE MASTER_COOKS.BI_Fact_Pagos (
 CREATE TABLE MASTER_COOKS.BI_Fact_Envio (
     tiempo_id VARCHAR(20) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Tiempo(tiempo_id),
     sucursal_id DECIMAL(6,0) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Sucursal(sucursal_id),
+	rango_id DECIMAL(2,0) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Rango_Etario(rango_id),
     cliente_id VARCHAR(50) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Cliente(cliente_id),
     costo_envio_total DECIMAL(12,2),
     cantidad_envios INT,
@@ -169,12 +170,7 @@ FROM MASTER_COOKS.Sucursal s;
 INSERT INTO MASTER_COOKS.BI_Dim_Empleado (empleado_id, empleado_rango_etario, empleado_sucursal)
 SELECT DISTINCT
     e.empl_legajo,
-	CASE
-        WHEN DATEDIFF(YEAR, e.empl_fecha_nacimiento, t.tick_fecha_hora) < 25 THEN 1
-        WHEN DATEDIFF(YEAR, e.empl_fecha_nacimiento, t.tick_fecha_hora) BETWEEN 25 AND 35 THEN 2
-        WHEN DATEDIFF(YEAR, e.empl_fecha_nacimiento, t.tick_fecha_hora) BETWEEN 35 AND 50 THEN 3
-        ELSE 4
-    END,
+	dbo.ExtractClienteRangoEtario(e.empl_fecha_nacimiento, t.tick_fecha_hora),
 	e.empl_sucursal_id
 FROM MASTER_COOKS.Empleado e
 JOIN MASTER_COOKS.Ticket t ON t.tick_vendedor_id = e.empl_legajo
@@ -209,7 +205,7 @@ SELECT DISTINCT
     tc.tipo_descripcion
 FROM MASTER_COOKS.Tipo_Caja tc
 
---Poblar Fact_Ventas 
+--Poblar Fact_Ventas
 INSERT INTO MASTER_COOKS.BI_Fact_Ventas (tiempo_id, sucursal_id, cliente_id, empleado_id, turno_id, tipo_caja_id, importe_total, cantidad_ventas, cantidad_unidades)
 SELECT DISTINCT
     dti.tiempo_id,
@@ -218,8 +214,8 @@ SELECT DISTINCT
 	dem.empleado_id,
     dtu.turno_id,
     dtc.tipo_caja_id,
-    SUM(t.tick_total), 
-	COUNT(DISTINCT CONCAT(t.tick_numero,t.tick_sucursal_id,t.tick_tipo)),  
+    SUM(t.tick_total),
+	COUNT(DISTINCT CONCAT(t.tick_numero,t.tick_sucursal_id,t.tick_tipo)),
     SUM(it.item_cantidad)
 FROM MASTER_COOKS.Ticket t
 JOIN MASTER_COOKS.BI_Dim_Tiempo dti ON dti.tiempo_id = CONCAT(YEAR(t.tick_fecha_hora), RIGHT('0' + CAST(MONTH(t.tick_fecha_hora) AS VARCHAR(2)), 2))
@@ -234,7 +230,8 @@ JOIN MASTER_COOKS.BI_Dim_Turno dtu ON ((DATEPART(HOUR, t.tick_fecha_hora)) >= dt
 										AND (DATEPART(HOUR, t.tick_fecha_hora)) BETWEEN dtu.turno_hora_inicio AND dtu.turno_hora_fin)
 GROUP BY dti.tiempo_id, dsu.sucursal_id, dcl.cliente_id, dem.empleado_id, dtu.turno_id, dtc.tipo_caja_id;
 
--- Poblar Fact_Promociones 
+
+-- Poblar Fact_Promociones
 INSERT INTO MASTER_COOKS.BI_Fact_Promociones(categoria_id, tiempo_id, monto_descuento_promocion, ticket_total, cantidad_tickets, promedio_porcentaje_descuento)
 SELECT DISTINCT
 	dcat.categoria_id,
@@ -256,37 +253,24 @@ INSERT INTO MASTER_COOKS.BI_Fact_Pagos ()
 SELECT
 
 
-
-
 -- Poblar Fact_Envio
-INSERT INTO MASTER_COOKS.BI_Fact_Envio (tiempo_id, id_sucursal, id_rango_etario_cliente, id_cliente_localidad, costo_envio_total, cantidad_envios, envios_cumplidos)
+INSERT INTO MASTER_COOKS.BI_Fact_Envio ( tiempo_id, sucursal_id, rango_id, cliente_id, costo_envio_total, cantidad_envios, envios_cumplidos)
 SELECT
-    CONCAT(YEAR(t.tick_fecha_hora), RIGHT('0' + CAST(MONTH(t.tick_fecha_hora) AS VARCHAR(2)), 2)) as id_tiempo,
-    e.envi_ticket_sucursal as id_sucursal,
-    CASE
-        WHEN DATEDIFF(YEAR, c.clie_fecha_nacimiento, t.tick_fecha_hora) < 25 THEN 1
-        WHEN DATEDIFF(YEAR, c.clie_fecha_nacimiento, t.tick_fecha_hora) BETWEEN 25 AND 35 THEN 2
-        WHEN DATEDIFF(YEAR, c.clie_fecha_nacimiento, t.tick_fecha_hora) BETWEEN 35 AND 50 THEN 3
-        ELSE 4
-    END as id_rango_etario_cliente,
-	CONCAT(c.clie_documento, c.clie_apellido, l.loca_provincia_id, l.loca_nombre) as id_cliente_localidad,
-    SUM(e.envi_costo) as costo_envio_total,
-    COUNT(*) as cantidad_envios,
-    SUM(CASE WHEN (cast(e.envi_fecha_hora_entrega as date) = e.envi_fecha_programada) THEN 1 ELSE 0 END) as envios_cumplidos
+    dti.tiempo_id,
+    dsuc.sucursal_id,
+    dran.rango_id,
+	dcl.cliente_id,
+    SUM(e.envi_costo),
+    COUNT(*),
+    SUM(CASE WHEN (CAST(e.envi_fecha_hora_entrega AS DATE) = e.envi_fecha_programada) THEN 1 ELSE 0 END)
 FROM MASTER_COOKS.Envio e
 JOIN MASTER_COOKS.Ticket t ON e.envi_ticket_numero = t.tick_numero AND e.envi_ticket_tipo = t.tick_tipo AND e.envi_ticket_sucursal = t.tick_sucursal_id
-JOIN MASTER_COOKS.Cliente c ON t.tick_cliente_documento = c.clie_documento AND t.tick_cliente_apellido = c.clie_apellido
-JOIN MASTER_COOKS.Localidad l ON c.clie_localidad_id = l.loca_nombre
-GROUP BY
-    CONCAT(YEAR(t.tick_fecha_hora), RIGHT('0' + CAST(MONTH(t.tick_fecha_hora) AS VARCHAR(2)), 2)),
-    e.envi_ticket_sucursal,
-	CONCAT(c.clie_documento, c.clie_apellido, l.loca_provincia_id, l.loca_nombre),
-    CASE
-        WHEN DATEDIFF(YEAR, c.clie_fecha_nacimiento, t.tick_fecha_hora) < 25 THEN 1
-        WHEN DATEDIFF(YEAR, c.clie_fecha_nacimiento, t.tick_fecha_hora) BETWEEN 25 AND 35 THEN 2
-        WHEN DATEDIFF(YEAR, c.clie_fecha_nacimiento, t.tick_fecha_hora) BETWEEN 35 AND 50 THEN 3
-        ELSE 4
-    END;
+JOIN MASTER_COOKS.BI_Dim_Tiempo dti ON dti.tiempo_id = CONCAT(YEAR(t.tick_fecha_hora), RIGHT('0' + CAST(MONTH(t.tick_fecha_hora) AS VARCHAR(2)), 2))
+JOIN MASTER_COOKS.BI_Dim_Sucursal dsuc ON dsuc.sucursal_id = t.tick_sucursal_id
+JOIN MASTER_COOKS.BI_Dim_Cliente dcl ON dcl.cliente_id = CONCAT(t.tick_cliente_documento, t.tick_cliente_apellido)
+JOIN MASTER_COOKS.BI_Dim_Rango_Etario dran ON dran.rango_id = dcl.cliente_rango_etario
+JOIN MASTER_COOKS.BI_Dim_Ubicacion dub ON dub.ubicacion_id = dsuc.sucursal_ubicacion
+GROUP BY dti.tiempo_id, dsuc.sucursal_id, dran.rango_id, dcl.cliente_id
 
 -- Crear vistas
 -- 1. Ticket Promedio mensual

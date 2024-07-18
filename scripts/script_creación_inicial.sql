@@ -181,7 +181,7 @@ create table MASTER_COOKS.Categoria (
 create table MASTER_COOKS.Subcategoria (
     subc_id int identity (1,1) primary key,
 	subc_categoria decimal(8,0),
-	subc_codigo decimal(8,0) 
+	subc_codigo decimal(8,0)
 	foreign key (subc_categoria) references MASTER_COOKS.Categoria(cate_codigo)
 )
 
@@ -264,7 +264,7 @@ AS
 BEGIN
     DECLARE @output NVARCHAR(255);
 
-    SET @output = REPLACE(@input, 'Sucursal N°:' ,'');
+    SET @output = REPLACE(@input, 'Sucursal NÂ°:' ,'');
 
     RETURN @output;
 END
@@ -278,7 +278,7 @@ AS
 BEGIN
     DECLARE @output NVARCHAR(255);
 
-    SET @output = REPLACE(@input, 'Ingr. Brut. N°: ', '');
+    SET @output = REPLACE(@input, 'Ingr. Brut. NÂ°: ', '');
 
     RETURN @output;
 END
@@ -292,7 +292,7 @@ AS
 BEGIN
     DECLARE @output NVARCHAR(255);
 
-    SET @output = REPLACE(@input, 'Categoria N°', '');
+    SET @output = REPLACE(@input, 'Categoria NÂ°', '');
 
     RETURN @output;
 END
@@ -306,7 +306,7 @@ AS
 BEGIN
     DECLARE @output NVARCHAR(255);
 
-    SET @output = REPLACE(@input, 'SubCategoria N°', '');
+    SET @output = REPLACE(@input, 'SubCategoria NÂ°', '');
 
     RETURN @output;
 END
@@ -334,9 +334,28 @@ AS
 BEGIN
     DECLARE @output NVARCHAR(255);
 
-    SET @output = REPLACE(@input, 'Marca N°','');
+    SET @output = REPLACE(@input, 'Marca NÂ°','');
 
     RETURN @output;
+END
+GO
+
+CREATE FUNCTION dbo.ExtractClienteRangoEtario(@fechaCliente DATE, @fechaActual DATE)
+RETURNS DECIMAL(2,0)
+AS
+BEGIN
+    DECLARE @rango DECIMAL(2,0);
+
+    IF DATEDIFF(YEAR, @fechaCliente, @fechaActual) < 25
+        SET @rango = 1;
+    ELSE IF DATEDIFF(YEAR, @fechaCliente, @fechaActual) BETWEEN 25 AND 34 -- Ajustado el lÃ­mite superior a 34 para evitar ambigÃ¼edades
+        SET @rango = 2;
+    ELSE IF DATEDIFF(YEAR, @fechaCliente, @fechaActual) BETWEEN 35 AND 49 -- Ajustado el lÃ­mite superior a 49 para evitar ambigÃ¼edades
+        SET @rango = 3;
+    ELSE
+        SET @rango = 4;
+
+    RETURN @rango;
 END
 GO
 
@@ -356,7 +375,7 @@ WHERE CLIENTE_LOCALIDAD IS NOT NULL AND CLIENTE_PROVINCIA IS NOT NULL;
 
 
 INSERT INTO MASTER_COOKS.Supermercado(supe_cuit, supe_nombre, supe_localidad_id, supe_provincia_id, supe_razon_social, supe_ing_brutos, supe_domicilio, supe_fecha_ini_actividad, supe_cond_fiscal)
-SELECT DISTINCT 
+SELECT DISTINCT
 	CAST(SUPER_CUIT AS CHAR(13)),
     CAST(SUPER_NOMBRE AS VARCHAR(30)),
     CAST(SUPER_LOCALIDAD AS VARCHAR(50)),
@@ -405,7 +424,7 @@ WHERE CAJA_TIPO IS NOT NULL;
 
 
 INSERT INTO MASTER_COOKS.Caja (caja_numero, caja_sucursal_id, caja_tipo_id)
-SELECT DISTINCT 
+SELECT DISTINCT
     CAST(CAJA_NUMERO AS DECIMAL(3,0)),
     CAST(dbo.ExtractSucursal(SUCURSAL_NOMBRE) AS DECIMAL(6,0)),
     CAST(CAJA_TIPO AS VARCHAR(50))
@@ -431,7 +450,7 @@ WHERE CLIENTE_DNI IS NOT NULL and CLIENTE_APELLIDO IS NOT NULL AND CLIENTE_LOCAL
 
 INSERT INTO MASTER_COOKS.Ticket (tick_numero, tick_tipo, tick_sucursal_id, tick_cliente_apellido, tick_cliente_documento, tick_vendedor_id, tick_caja_numero, tick_fecha_hora, tick_total, tick_subtotal_productos, tick_total_descuento_promocion, tick_total_descuento_aplicado_mp, tick_total_envio)
 SELECT DISTINCT
-    CAST(TICKET_NUMERO AS DECIMAL(18,0)), 
+    CAST(TICKET_NUMERO AS DECIMAL(18,0)),
     CAST(MAX(TICKET_TIPO_COMPROBANTE) AS CHAR(1)),
 	CAST(MAX(dbo.ExtractSucursal(SUCURSAL_NOMBRE)) AS DECIMAL(6,0)),
     CAST(MAX(CLIENTE_APELLIDO) AS VARCHAR(30)),
@@ -450,14 +469,14 @@ GROUP BY TICKET_NUMERO, TICKET_TIPO_COMPROBANTE, SUCURSAL_NOMBRE;
 
 
 INSERT INTO MASTER_COOKS.Tipo_Medio_Pago(tipo_id)
-SELECT DISTINCT 
+SELECT DISTINCT
 	CAST(PAGO_TIPO_MEDIO_PAGO AS VARCHAR(30))
 FROM gd_esquema.Maestra
 WHERE PAGO_TIPO_MEDIO_PAGO IS NOT NULL;
 
 
 INSERT INTO MASTER_COOKS.Medio_De_Pago(medi_descripcion, medi_tipo)
-SELECT DISTINCT 
+SELECT DISTINCT
 	CAST(PAGO_MEDIO_PAGO AS NVARCHAR(50)),
 	CAST(PAGO_TIPO_MEDIO_PAGO AS VARCHAR(30))
 FROM gd_esquema.Maestra
@@ -481,7 +500,7 @@ INSERT INTO MASTER_COOKS.Pago(pago_id, pago_ticket_sucursal, pago_ticket_numero,
 SELECT DISTINCT
 	CAST(CONCAT(TICKET_NUMERO, ' ', dbo.ExtractSucursal(SUCURSAL_NOMBRE)) AS VARCHAR(60)),
     CAST(MAX(dbo.ExtractSucursal(SUCURSAL_NOMBRE)) AS DECIMAL(6,0)),
-    CAST(MAX(TICKET_NUMERO) AS DECIMAL(18,0)), 
+    CAST(MAX(TICKET_NUMERO) AS DECIMAL(18,0)),
     CAST(MAX(TICKET_TIPO_COMPROBANTE) AS CHAR(1)),
 	CAST(MAX(PAGO_MEDIO_PAGO) AS NVARCHAR(50)),
 	CAST(MAX(PAGO_FECHA) AS DATE),
@@ -592,7 +611,7 @@ WHERE PRODUCTO_NOMBRE IS NOT NULL;
 
 INSERT INTO MASTER_COOKS.Rebaja_Producto (reba_producto_id, reba_promocion_id, reba_prod_promocion_aplicada)
 SELECT DISTINCT
-    (SELECT DISTINCT prod_id FROM MASTER_COOKS.Producto 
+    (SELECT DISTINCT prod_id FROM MASTER_COOKS.Producto
 		JOIN MASTER_COOKS.Subcategoria ON prod_subcategoria_id = subc_id
 		JOIN MASTER_COOKS.Categoria ON subc_categoria = cate_codigo
 		WHERE prod_codigo = CAST(dbo.ExtractProductoNombre(PRODUCTO_NOMBRE) AS DECIMAL(12,0)) AND subc_codigo = CAST(dbo.ExtractSubCategoria(PRODUCTO_SUB_CATEGORIA) AS DECIMAL(8,0)) AND cate_codigo = CAST(dbo.ExtractCategoria(PRODUCTO_CATEGORIA) AS DECIMAL(8,0))) ,
@@ -607,7 +626,7 @@ SELECT DISTINCT
     CAST(TICKET_TIPO_COMPROBANTE AS CHAR(1)),
     CAST(dbo.ExtractSucursal(SUCURSAL_NOMBRE) AS DECIMAL(6,0)),
     CAST(TICKET_NUMERO AS DECIMAL(18,0)),
-    (SELECT DISTINCT prod_id FROM MASTER_COOKS.Producto 
+    (SELECT DISTINCT prod_id FROM MASTER_COOKS.Producto
 		JOIN MASTER_COOKS.Subcategoria ON prod_subcategoria_id = subc_id
 		JOIN MASTER_COOKS.Categoria ON subc_categoria = cate_codigo
 		WHERE prod_codigo = CAST(dbo.ExtractProductoNombre(PRODUCTO_NOMBRE) AS DECIMAL(12,0)) AND subc_codigo = CAST(dbo.ExtractSubCategoria(PRODUCTO_SUB_CATEGORIA) AS DECIMAL(8,0)) AND cate_codigo = CAST(dbo.ExtractCategoria(PRODUCTO_CATEGORIA) AS DECIMAL(8,0))),
@@ -624,7 +643,7 @@ SELECT DISTINCT
     CAST(TICKET_TIPO_COMPROBANTE AS CHAR(1)),
     CAST(dbo.ExtractSucursal(SUCURSAL_NOMBRE) AS DECIMAL(6,0)),
     CAST(TICKET_NUMERO AS DECIMAL(18,0)),
-	(SELECT DISTINCT prod_id FROM MASTER_COOKS.Producto 
+	(SELECT DISTINCT prod_id FROM MASTER_COOKS.Producto
 		JOIN MASTER_COOKS.Subcategoria ON prod_subcategoria_id = subc_id
 		JOIN MASTER_COOKS.Categoria ON subc_categoria = cate_codigo
 		WHERE prod_codigo = CAST(dbo.ExtractProductoNombre(PRODUCTO_NOMBRE) AS DECIMAL(12,0)) AND subc_codigo = CAST(dbo.ExtractSubCategoria(PRODUCTO_SUB_CATEGORIA) AS DECIMAL(8,0)) AND cate_codigo = CAST(dbo.ExtractCategoria(PRODUCTO_CATEGORIA) AS DECIMAL(8,0))),

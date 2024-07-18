@@ -31,6 +31,7 @@ DROP FUNCTION IF EXISTS dbo.ExtractSubCategoria;
 DROP FUNCTION IF EXISTS dbo.ExtractProductoNombre;
 DROP FUNCTION IF EXISTS dbo.ExtractProductoMarca;
 DROP FUNCTION IF EXISTS dbo.ExtractCategoria;
+DROP FUNCTION IF EXISTS dbo.ExtractClienteRangoEtario;
 
 
 -------------------------
