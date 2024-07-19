@@ -290,18 +290,18 @@ GROUP BY dti.tiempo_id, dsuc.sucursal_id, dran.rango_id, dcl.cliente_id
 -- Crear vistas
 -- 1. Ticket Promedio mensual
 CREATE VIEW MASTER_COOKS.BI_VW_TicketPromedioMensual AS
-SELECT DISTINCT 
-    u.ubicacion_localidad as localidad, 
-    t.tiempo_anio as anio, 
-    t.tiempo_mes as mes, 
+SELECT DISTINCT
+    u.ubicacion_localidad as localidad,
+    t.tiempo_anio as anio,
+    t.tiempo_mes as mes,
     SUM(fv.importe_total) / SUM(fv.cantidad_ventas) AS valor_promedio_de_ventas
 FROM MASTER_COOKS.BI_Fact_Ventas fv
 JOIN MASTER_COOKS.BI_Dim_Sucursal s ON s.sucursal_id = fv.sucursal_id
 JOIN MASTER_COOKS.BI_Dim_Tiempo t ON t.tiempo_id = fv.tiempo_id
 JOIN MASTER_COOKS.BI_Dim_Ubicacion u ON u.ubicacion_id = s.sucursal_ubicacion
-GROUP BY 
-    u.ubicacion_localidad, 
-    t.tiempo_anio, 
+GROUP BY
+    u.ubicacion_localidad,
+    t.tiempo_anio,
     t.tiempo_mes
 -- 2. Cantidad unidades promedio
 CREATE VIEW MASTER_COOKS.BI_VW_UnidadesPromedioPorTurno AS
@@ -317,13 +317,13 @@ GROUP BY dt.tiempo_anio, dt.tiempo_cuatrimestre, dtur.turno_id
 GO
 
 -- 3. Porcentaje anual de ventas por rango etario del cliente y tipo de caja
-CREATE VIEW MASTER_COOKS.BI_VW_PorcentajeVentasRangoEtarioEmpleado AS 
+CREATE VIEW MASTER_COOKS.BI_VW_PorcentajeVentasRangoEtarioEmpleado AS
 SELECT
     dt.tiempo_anio,
     dt.tiempo_cuatrimestre,
     de.empleado_rango_etario AS rango_etario_empleado,
     dc.tipo_caja_id,
-    AVG(fv.importe_total) as porcentaje_anual_de_ventas 
+    AVG(fv.importe_total) as porcentaje_anual_de_ventas
 FROM MASTER_COOKS.BI_Fact_Ventas fv
 JOIN MASTER_COOKS.BI_Dim_Tiempo dt ON fv.tiempo_id = dt.tiempo_id
 JOIN MASTER_COOKS.BI_Dim_Empleado de ON de.empleado_id = fv.empleado_id
@@ -332,7 +332,7 @@ GROUP BY dt.tiempo_anio, dt.tiempo_cuatrimestre, de.empleado_rango_etario, dc.ti
 GO
 
 -- 4. Cantidad de ventas por turno y localidad
-CREATE VIEW MASTER_COOKS.BI_VW_VentasPorTurnoLocalidad AS 
+CREATE VIEW MASTER_COOKS.BI_VW_VentasPorTurnoLocalidad AS
 SELECT
     dt.tiempo_anio,
     dt.tiempo_mes,
@@ -352,7 +352,7 @@ SELECT
     dt.tiempo_anio,
     dt.tiempo_mes,
     fp.porcentaje_descuento
-FROM MASTER_COOKS.BI_Fact_Promociones fp 
+FROM MASTER_COOKS.BI_Fact_Promociones fp
 JOIN MASTER_COOKS.BI_Dim_Tiempo dt ON fp.tiempo_id = dt.tiempo_id
 GROUP BY dt.tiempo_anio, dt.tiempo_mes, fp.porcentaje_descuento;
 GO
@@ -363,7 +363,7 @@ SELECT TOP 3
     dt.tiempo_cuatrimestre,
     dc.categoria_id,
     SUM(fp.monto_descuento_promocion) as total_descuento_aplicado
-FROM MASTER_COOKS.BI_Fact_Promociones fp 
+FROM MASTER_COOKS.BI_Fact_Promociones fp
 JOIN MASTER_COOKS.BI_Dim_Tiempo dt ON fp.tiempo_id = dt.tiempo_id
 JOIN MASTER_COOKS.BI_Dim_Categoria dc ON fp.categoria_id = dc.categoria_id
 GROUP BY dt.tiempo_anio, dt.tiempo_cuatrimestre, dc.categoria_id
@@ -373,7 +373,7 @@ ORDER BY
     SUM(fp.monto_descuento_promocion) DESC;
 GO
 -- 7. Porcentaje de cumplimiento de envíos
-CREATE VIEW MASTER_COOKS.BI_VW_CumplimientoEnvios AS 
+CREATE VIEW MASTER_COOKS.BI_VW_CumplimientoEnvios AS
 SELECT
     dt.tiempo_anio,
     dt.tiempo_mes,
@@ -384,7 +384,7 @@ JOIN MASTER_COOKS.BI_Dim_Tiempo dt ON fe.tiempo_id = dt.tiempo_id
 GROUP BY dt.tiempo_anio, dt.tiempo_mes, fe.sucursal_id, CAST(fe.envios_cumplidos AS FLOAT) / CAST(fe.cantidad_envios AS FLOAT)
 GO
 -- 8. Cantidad de envíos por rango etario de clientes
-CREATE VIEW MASTER_COOKS.BI_VW_EnviosPorRangoEtarioCliente AS 
+CREATE VIEW MASTER_COOKS.BI_VW_EnviosPorRangoEtarioCliente AS
 SELECT
     dt.tiempo_anio,
     dt.tiempo_cuatrimestre,
@@ -398,18 +398,18 @@ GROUP BY dt.tiempo_anio, dt.tiempo_cuatrimestre, dre.rango_id;
 GO
 
 -- 9. Las 5 localidades con mayor costo de envío
-CREATE VIEW MASTER_COOKS.BI_VW_Top5LocalidadesCostoEnvio AS 
+CREATE VIEW MASTER_COOKS.BI_VW_Top5LocalidadesCostoEnvio AS
 SELECT TOP 5
     du.ubicacion_localidad AS Localidad,
     SUM(env.costo_envio_total) AS Costo_Envio_Total
 	FROM MASTER_COOKS.BI_Fact_Envio env
-JOIN MASTER_COOKS.BI_Dim_Cliente dc on env.cliente_id = dc.cliente_id 
+JOIN MASTER_COOKS.BI_Dim_Cliente dc on env.cliente_id = dc.cliente_id
 JOIN MASTER_COOKS.BI_Dim_Ubicacion du ON dc.cliente_ubicacion = du.ubicacion_id
 GROUP BY du.ubicacion_localidad
 ORDER BY SUM(env.costo_envio_total) DESC;
 GO
 -- 10. Las 3 sucursales con el mayor importe de pagos en cuotas
-CREATE VIEW MASTER_COOKS.BI_VW_Top3SucursalesPagosCuotas AS 
+CREATE VIEW MASTER_COOKS.BI_VW_Top3SucursalesPagosCuotas AS
 SELECT TOP 3
         dt.tiempo_anio,
         dt.tiempo_mes,
@@ -427,22 +427,23 @@ GO
 CREATE VIEW MASTER_COOKS.BI_VW_PromedioImporteCuotaPorRangoEtarioCliente AS
 SELECT
     dre.rango_id,
-    AVG(fp.importe_cuota) AS promedio_importe_cuota --hay que verlo porque en ningun lado de pagos tenemos la cantidad de cuotas
-FROM MASTER_COOKS.BI_Fact_Pagos fp 
+    AVG(fp.importe_pago_en_cuotas) AS promedio_importe_cuota
+FROM MASTER_COOKS.BI_Fact_Pagos fp
 JOIN MASTER_COOKS.BI_Dim_Rango_Etario dre ON fp.rango_id = dre.rango_id
 GROUP BY dre.rango_id;
 GO
 
--- 12. Porcentaje de descuento aplicado por cada medio de pago 
+-- 12. Porcentaje de descuento aplicado por cada medio de pago
 CREATE VIEW MASTER_COOKS.BI_VW_PorcentajeDescuentoPorMedioPago AS --terminar
 SELECT
     dt.tiempo_anio,
     dt.tiempo_cuatrimestre,
     dmp.medio_pago_id,
-    (SUM(fd.monto_descuento) / (SUM(fv.importe_total) + SUM(fd.monto_descuento)) * 100) AS porcentaje_descuento
-FROM MASTER_COOKS.BI_Fact_Promociones fp
-JOIN MASTER_COOKS.BI_Dim_Tiempo dt ON fp.tiempo_id = dt.tiempo_id
-JOIN MASTER_COOKS.BI_Dim_Medio_Pago dmp ON fd.medio_pago_id = dmp.medio_pago_id
-JOIN MASTER_COOKS.BI_Fact_Ventas fv ON fd.id_ticket = fv.id_ticket AND fd.id_tiempo = fv.id_tiempo
+    (SUM(fpromo.monto_descuento_promocion) / (SUM(fv.importe_total) + SUM(fpromo.monto_descuento_promocion)) * 100) AS porcentaje_descuento
+FROM MASTER_COOKS.BI_Fact_Promociones fpromo
+JOIN MASTER_COOKS.BI_Dim_Tiempo dt ON fpromo.tiempo_id = dt.tiempo_id
+JOIN MASTER_COOKS.BI_Fact_Pagos fpagos ON fpagos.tiempo_id = fpromo.tiempo_id AND fpagos.medio_pago_id = fpromo.medio_pago_id AND fpagos.sucursal_id = fpromo.sucursal_id AND fpagos.cliente_id = fpromo.cliente_id AND fpagos.rango_id = fpromo.rango_id
+JOIN MASTER_COOKS.BI_Dim_Medio_Pago dmp ON fpagos.medio_pago_id = dmp.medio_pago_id
+JOIN MASTER_COOKS.BI_Fact_Ventas fv ON fv.tiempo_id = fpromo.tiempo_id AND fv.sucursal_id = fpromo.sucursal_id AND fv.cliente_id = fpromo.cliente_id AND fv.empleado_id = fpromo.empleado_id AND fv.turno_id = fpromo.turno_id AND fv.tipo_caja_id = fpromo.tipo_caja_id
 GROUP BY dt.tiempo_anio, dt.tiempo_cuatrimestre, dmp.medio_pago_id;
 GO
