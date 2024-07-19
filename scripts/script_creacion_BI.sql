@@ -87,10 +87,10 @@ CREATE TABLE MASTER_COOKS.BI_Fact_Ventas (
 CREATE TABLE MASTER_COOKS.BI_Fact_Promociones (
     categoria_id VARCHAR(20) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Categoria(categoria_id),
     tiempo_id VARCHAR(20) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Tiempo(tiempo_id),
-    monto_descuento_promocion DECIMAL(18,2), -- Ajustado
-    ticket_total DECIMAL(18,2), -- Ajustado
-    cantidad_tickets DECIMAL(18,0), -- Ajustado
-    porcentaje_descuento DECIMAL(5,2), -- Ajustado
+    monto_descuento_promocion DECIMAL(18,2), 
+    ticket_total DECIMAL(18,2), 
+    cantidad_tickets DECIMAL(18,0), 
+    porcentaje_descuento DECIMAL(5,2), 
     PRIMARY KEY (categoria_id, tiempo_id)
 );
 
@@ -117,7 +117,7 @@ CREATE TABLE MASTER_COOKS.BI_Fact_Envio (
     costo_envio_total DECIMAL(12,2),
     cantidad_envios INT,
     envios_cumplidos INT,
-    PRIMARY KEY (tiempo_id, sucursal_id, cliente_id)
+    PRIMARY KEY (tiempo_id, sucursal_id, rango_id, cliente_id)
 );
 
 -- Poblar las dimensiones
