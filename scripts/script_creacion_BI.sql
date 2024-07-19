@@ -87,10 +87,10 @@ CREATE TABLE MASTER_COOKS.BI_Fact_Ventas (
 CREATE TABLE MASTER_COOKS.BI_Fact_Promociones (
     categoria_id VARCHAR(20) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Categoria(categoria_id),
     tiempo_id VARCHAR(20) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Tiempo(tiempo_id),
-    monto_descuento_promocion DECIMAL(18,2), 
-    ticket_total DECIMAL(18,2), 
-    cantidad_tickets DECIMAL(18,0), 
-    porcentaje_descuento DECIMAL(5,2), 
+    monto_descuento_promocion DECIMAL(18,2),
+    ticket_total DECIMAL(18,2),
+    cantidad_tickets DECIMAL(18,0),
+    porcentaje_descuento DECIMAL(5,2),
     PRIMARY KEY (categoria_id, tiempo_id)
 );
 
@@ -286,9 +286,12 @@ JOIN MASTER_COOKS.BI_Dim_Cliente dcl ON dcl.cliente_id = CONCAT(t.tick_cliente_d
 JOIN MASTER_COOKS.BI_Dim_Rango_Etario dran ON dran.rango_id = dcl.cliente_rango_etario
 JOIN MASTER_COOKS.BI_Dim_Ubicacion dub ON dub.ubicacion_id = dsuc.sucursal_ubicacion
 GROUP BY dti.tiempo_id, dsuc.sucursal_id, dran.rango_id, dcl.cliente_id
+GO
 
 -- Crear vistas
--- 1. Ticket Promedio mensual
+
+-- 1. Ticket Promedio mensual. Valor promedio de las ventas (en $) según la localidad, año y mes. 
+-- Se calcula en función de la sumatoria del importe de las ventas sobre el total de las mismas.
 CREATE VIEW MASTER_COOKS.BI_VW_TicketPromedioMensual AS
 SELECT DISTINCT
     u.ubicacion_localidad as localidad,
@@ -303,6 +306,8 @@ GROUP BY
     u.ubicacion_localidad,
     t.tiempo_anio,
     t.tiempo_mes
+GO
+
 -- 2. Cantidad unidades promedio
 CREATE VIEW MASTER_COOKS.BI_VW_UnidadesPromedioPorTurno AS
 SELECT
@@ -445,3 +450,32 @@ JOIN MASTER_COOKS.BI_Dim_Tiempo dt ON fp.tiempo_id = dt.tiempo_id
 JOIN MASTER_COOKS.BI_Dim_Medio_Pago dmp ON fp.medio_pago_id = dmp.medio_pago_id
 GROUP BY dt.tiempo_anio, dt.tiempo_cuatrimestre, dmp.medio_pago_id;
 GO
+
+--Probar todas las views
+SELECT * FROM MASTER_COOKS.BI_VW_TicketPromedioMensual;
+SELECT * FROM MASTER_COOKS.BI_VW_UnidadesPromedioPorTurno;
+SELECT * FROM MASTER_COOKS.BI_VW_PorcentajeVentasRangoEtarioEmpleado;
+SELECT * FROM MASTER_COOKS.BI_VW_VentasPorTurnoLocalidad;
+SELECT * FROM MASTER_COOKS.BI_VW_PorcentajeDescuentoAplicado;
+SELECT * FROM MASTER_COOKS.BI_VW_Top3CategoriasDescuento;
+SELECT * FROM MASTER_COOKS.BI_VW_CumplimientoEnvios;
+SELECT * FROM MASTER_COOKS.BI_VW_EnviosPorRangoEtarioCliente;
+SELECT * FROM MASTER_COOKS.BI_VW_Top5LocalidadesCostoEnvio;
+SELECT * FROM MASTER_COOKS.BI_VW_Top3SucursalesPagosCuotas;
+SELECT * FROM MASTER_COOKS.BI_VW_PromedioImporteCuotaPorRangoEtarioCliente;
+SELECT * FROM MASTER_COOKS.BI_VW_PorcentajeDescuentoPorMedioPago;
+
+
+SELECT * FROM MASTER_COOKS.BI_VW_TicketPromedioMensual;
+SELECT 
+    SUM(t.tick_total) / COUNT(t.tick_numero) AS valor_promedio_ventas
+FROM 
+    MASTER_COOKS.Ticket t
+JOIN 
+    MASTER_COOKS.Sucursal s ON t.tick_sucursal_id = s.sucu_numero
+JOIN 
+    MASTER_COOKS.Localidad l ON s.sucu_localidad_id = l.loca_nombre AND s.sucu_provincia_id = l.loca_provincia_id
+WHERE 
+    l.loca_nombre = 'Colonia La Chispa'
+    AND YEAR(t.tick_fecha_hora) = 2024
+    AND MONTH(t.tick_fecha_hora) = 9;

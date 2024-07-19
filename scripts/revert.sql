@@ -25,6 +25,8 @@ DROP TABLE IF EXISTS MASTER_COOKS.Sucursal;
 DROP TABLE IF EXISTS MASTER_COOKS.Localidad;
 DROP TABLE IF EXISTS MASTER_COOKS.Provincia;
 
+-------------------------
+--Eliminar Funciones
 DROP FUNCTION IF EXISTS dbo.ExtractSucursal;
 DROP FUNCTION IF EXISTS dbo.ExtractIIBB;
 DROP FUNCTION IF EXISTS dbo.ExtractSubCategoria;
@@ -32,6 +34,7 @@ DROP FUNCTION IF EXISTS dbo.ExtractProductoNombre;
 DROP FUNCTION IF EXISTS dbo.ExtractProductoMarca;
 DROP FUNCTION IF EXISTS dbo.ExtractCategoria;
 DROP FUNCTION IF EXISTS dbo.ExtractRangoEtario;
+DROP FUNCTION IF EXISTS dbo.devolverImporteDeCuotas;
 
 
 -------------------------
