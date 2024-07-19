@@ -434,16 +434,14 @@ GROUP BY dre.rango_id;
 GO
 
 -- 12. Porcentaje de descuento aplicado por cada medio de pago
-CREATE VIEW MASTER_COOKS.BI_VW_PorcentajeDescuentoPorMedioPago AS --terminar
+CREATE VIEW MASTER_COOKS.BI_VW_PorcentajeDescuentoPorMedioPago AS
 SELECT
     dt.tiempo_anio,
     dt.tiempo_cuatrimestre,
     dmp.medio_pago_id,
-    (SUM(fpromo.monto_descuento_promocion) / (SUM(fv.importe_total) + SUM(fpromo.monto_descuento_promocion)) * 100) AS porcentaje_descuento --ver, esta muy raro lo que da
-FROM MASTER_COOKS.BI_Fact_Promociones fpromo
-JOIN MASTER_COOKS.BI_Dim_Tiempo dt ON fpromo.tiempo_id = dt.tiempo_id
-JOIN MASTER_COOKS.BI_Fact_Pagos fpagos ON fpagos.tiempo_id = fpromo.tiempo_id
-JOIN MASTER_COOKS.BI_Dim_Medio_Pago dmp ON fpagos.medio_pago_id = dmp.medio_pago_id
-JOIN MASTER_COOKS.BI_Fact_Ventas fv ON fv.tiempo_id = fpagos.tiempo_id AND fv.sucursal_id = fpagos.sucursal_id AND fv.cliente_id = fpagos.cliente_id
+    (SUM(fp.descuento_total) / (SUM(fp.importe_pago_total) + SUM(fp.descuento_total)) * 100) AS porcentaje_descuento
+FROM MASTER_COOKS.BI_Fact_Pagos fp
+JOIN MASTER_COOKS.BI_Dim_Tiempo dt ON fp.tiempo_id = dt.tiempo_id
+JOIN MASTER_COOKS.BI_Dim_Medio_Pago dmp ON fp.medio_pago_id = dmp.medio_pago_id
 GROUP BY dt.tiempo_anio, dt.tiempo_cuatrimestre, dmp.medio_pago_id;
 GO
