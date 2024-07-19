@@ -439,11 +439,11 @@ SELECT
     dt.tiempo_anio,
     dt.tiempo_cuatrimestre,
     dmp.medio_pago_id,
-    (SUM(fpromo.monto_descuento_promocion) / (SUM(fv.importe_total) + SUM(fpromo.monto_descuento_promocion)) * 100) AS porcentaje_descuento
+    (SUM(fpromo.monto_descuento_promocion) / (SUM(fv.importe_total) + SUM(fpromo.monto_descuento_promocion)) * 100) AS porcentaje_descuento --ver, esta muy raro lo que da
 FROM MASTER_COOKS.BI_Fact_Promociones fpromo
 JOIN MASTER_COOKS.BI_Dim_Tiempo dt ON fpromo.tiempo_id = dt.tiempo_id
-JOIN MASTER_COOKS.BI_Fact_Pagos fpagos ON fpagos.tiempo_id = fpromo.tiempo_id AND fpagos.medio_pago_id = fpromo.medio_pago_id AND fpagos.sucursal_id = fpromo.sucursal_id AND fpagos.cliente_id = fpromo.cliente_id AND fpagos.rango_id = fpromo.rango_id
+JOIN MASTER_COOKS.BI_Fact_Pagos fpagos ON fpagos.tiempo_id = fpromo.tiempo_id
 JOIN MASTER_COOKS.BI_Dim_Medio_Pago dmp ON fpagos.medio_pago_id = dmp.medio_pago_id
-JOIN MASTER_COOKS.BI_Fact_Ventas fv ON fv.tiempo_id = fpromo.tiempo_id AND fv.sucursal_id = fpromo.sucursal_id AND fv.cliente_id = fpromo.cliente_id AND fv.empleado_id = fpromo.empleado_id AND fv.turno_id = fpromo.turno_id AND fv.tipo_caja_id = fpromo.tipo_caja_id
+JOIN MASTER_COOKS.BI_Fact_Ventas fv ON fv.tiempo_id = fpagos.tiempo_id AND fv.sucursal_id = fpagos.sucursal_id AND fv.cliente_id = fpagos.cliente_id
 GROUP BY dt.tiempo_anio, dt.tiempo_cuatrimestre, dmp.medio_pago_id;
 GO

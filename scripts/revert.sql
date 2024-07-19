@@ -37,18 +37,18 @@ DROP FUNCTION IF EXISTS dbo.ExtractRangoEtario;
 -------------------------
 -- Eliminar vistas
 
-DROP VIEW IF EXISTS BI_VW_PorcentajeDescuentoPorMedioPago;
-DROP VIEW IF EXISTS BI_VW_PromedioImporteCuotaPorRangoEtarioCliente;
-DROP VIEW IF EXISTS BI_VW_Top3SucursalesPagosCuotas;
-DROP VIEW IF EXISTS BI_VW_Top5LocalidadesCostoEnvio;
-DROP VIEW IF EXISTS BI_VW_EnviosPorRangoEtarioCliente;
-DROP VIEW IF EXISTS BI_VW_CumplimientoEnvios;
-DROP VIEW IF EXISTS BI_VW_Top3CategoriasDescuento;
-DROP VIEW IF EXISTS BI_VW_PorcentajeDescuentoAplicado;
-DROP VIEW IF EXISTS BI_VW_VentasPorTurnoLocalidad;
-DROP VIEW IF EXISTS BI_VW_PorcentajeVentasRangoEtarioEmpleado;
-DROP VIEW IF EXISTS BI_VW_UnidadesPromedioPorTurno;
-DROP VIEW IF EXISTS BI_VW_TicketPromedioMensual;
+DROP VIEW IF EXISTS MASTER_COOKS.BI_VW_PorcentajeDescuentoPorMedioPago;
+DROP VIEW IF EXISTS MASTER_COOKS.BI_VW_PromedioImporteCuotaPorRangoEtarioCliente;
+DROP VIEW IF EXISTS MASTER_COOKS.BI_VW_Top3SucursalesPagosCuotas;
+DROP VIEW IF EXISTS MASTER_COOKS.BI_VW_Top5LocalidadesCostoEnvio;
+DROP VIEW IF EXISTS MASTER_COOKS.BI_VW_EnviosPorRangoEtarioCliente;
+DROP VIEW IF EXISTS MASTER_COOKS.BI_VW_CumplimientoEnvios;
+DROP VIEW IF EXISTS MASTER_COOKS.BI_VW_Top3CategoriasDescuento;
+DROP VIEW IF EXISTS MASTER_COOKS.BI_VW_PorcentajeDescuentoAplicado;
+DROP VIEW IF EXISTS MASTER_COOKS.BI_VW_VentasPorTurnoLocalidad;
+DROP VIEW IF EXISTS MASTER_COOKS.BI_VW_PorcentajeVentasRangoEtarioEmpleado;
+DROP VIEW IF EXISTS MASTER_COOKS.BI_VW_UnidadesPromedioPorTurno;
+DROP VIEW IF EXISTS MASTER_COOKS.BI_VW_TicketPromedioMensual;
 
 
 -- Eliminar tablas de hechos
