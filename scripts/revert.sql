@@ -35,6 +35,7 @@ DROP FUNCTION IF EXISTS dbo.ExtractProductoMarca;
 DROP FUNCTION IF EXISTS dbo.ExtractCategoria;
 DROP FUNCTION IF EXISTS dbo.ExtractRangoEtario;
 DROP FUNCTION IF EXISTS dbo.devolverImporteDeCuotas;
+DROP FUNCTION IF EXISTS dbo.devolverTurno;
 
 
 -------------------------
