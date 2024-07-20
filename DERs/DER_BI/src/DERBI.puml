@@ -42,7 +42,7 @@ entity BI_Dim_Empleado <<Dimension>> {
 }
 
 entity BI_Dim_Turno <<Dimension>> {
-    **PK | turno_id: decimal(6,0)**
+    **PK | turno_id: char(12)**
     --
     turno_hora_inicio: datetime
     turno_hora_fin: datetime
