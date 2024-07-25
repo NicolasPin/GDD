@@ -26,24 +26,6 @@ CREATE TABLE MASTER_COOKS.BI_Dim_Rango_Etario (
     rango_descripcion VARCHAR(50)
 );
 
--- Dimensión Cliente
-CREATE TABLE MASTER_COOKS.BI_Dim_Cliente (
-    cliente_id VARCHAR(50) PRIMARY KEY,
-    cliente_ubicacion VARCHAR(110),
-    cliente_rango_etario DECIMAL(2,0)
-    FOREIGN KEY (cliente_rango_etario) REFERENCES MASTER_COOKS.BI_Dim_Rango_Etario(rango_id),
-	FOREIGN KEY (cliente_ubicacion) REFERENCES MASTER_COOKS.BI_Dim_Ubicacion(ubicacion_id)
-);
-
---Dimension Empleado
-CREATE TABLE MASTER_COOKS.BI_Dim_Empleado (
-    empleado_id VARCHAR(60) PRIMARY KEY,
-    empleado_rango_etario DECIMAL(2,0),
-	empleado_sucursal DECIMAL(6,0)
-    FOREIGN KEY (empleado_rango_etario) REFERENCES MASTER_COOKS.BI_Dim_Rango_Etario(rango_id),
-	FOREIGN KEY (empleado_sucursal) REFERENCES MASTER_COOKS.BI_Dim_Sucursal(sucursal_id)
-);
-
 -- Dimensión Turnos
 CREATE TABLE MASTER_COOKS.BI_Dim_Turno (
     turno_id CHAR(12) PRIMARY KEY,
@@ -69,18 +51,18 @@ CREATE TABLE MASTER_COOKS.BI_Dim_Tipo_Caja (
     tipo_caja_id VARCHAR(50) PRIMARY KEY
 );
 
--- Tabla de Hechos Ventas
+-- Tabla de Hechos Ventas (usan tambien ubicacion)
 CREATE TABLE MASTER_COOKS.BI_Fact_Ventas (
     tiempo_id VARCHAR(20) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Tiempo(tiempo_id),
     sucursal_id DECIMAL(6,0) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Sucursal(sucursal_id),
-    cliente_id VARCHAR(50) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Cliente(cliente_id),
-	empleado_id VARCHAR(60) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Empleado(empleado_id),
+	rango_id DECIMAL(2,0) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Rango_Etario(rango_id),
     turno_id CHAR(12) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Turno(turno_id),
     tipo_caja_id VARCHAR(50) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Tipo_Caja(tipo_caja_id),
+	ubicacion_id VARCHAR(110) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Ubicacion(ubicacion_id),
     importe_total DECIMAL(12,2),
 	cantidad_ventas DECIMAL(12,0),
     cantidad_unidades DECIMAL(12,0),
-    PRIMARY KEY (tiempo_id, sucursal_id, cliente_id, empleado_id, turno_id, tipo_caja_id)
+    PRIMARY KEY (tiempo_id, sucursal_id, rango_id, turno_id, tipo_caja_id, ubicacion_id)
 );
 
 -- Tabla de Hechos Promociones
@@ -88,24 +70,21 @@ CREATE TABLE MASTER_COOKS.BI_Fact_Promociones (
     categoria_id VARCHAR(20) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Categoria(categoria_id),
     tiempo_id VARCHAR(20) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Tiempo(tiempo_id),
     monto_descuento_promocion DECIMAL(18,2),
-    ticket_total DECIMAL(18,2),
-    cantidad_tickets DECIMAL(18,0),
     porcentaje_descuento DECIMAL(5,2),
     PRIMARY KEY (categoria_id, tiempo_id)
 );
 
 
--- Tabla de Hechos Pagos
+-- Tabla de Hechos Pagos 
 CREATE TABLE MASTER_COOKS.BI_Fact_Pagos (
     tiempo_id VARCHAR(20) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Tiempo(tiempo_id),
     medio_pago_id VARCHAR(50) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Medio_Pago(medio_pago_id),
 	sucursal_id DECIMAL(6,0) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Sucursal(sucursal_id),
-	cliente_id VARCHAR(50) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Cliente(cliente_id),
 	rango_id DECIMAL(2,0) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Rango_Etario(rango_id),
 	importe_pago_en_cuotas DECIMAL(12,2),
 	importe_pago_total DECIMAL(12,2),
 	descuento_total DECIMAL(12,2)
-	PRIMARY KEY (tiempo_id, medio_pago_id, sucursal_id, cliente_id, rango_id)
+	PRIMARY KEY (tiempo_id, medio_pago_id, sucursal_id, rango_id)
 );
 
 -- Tabla de Hechos Envíos
@@ -113,11 +92,11 @@ CREATE TABLE MASTER_COOKS.BI_Fact_Envio (
     tiempo_id VARCHAR(20) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Tiempo(tiempo_id),
     sucursal_id DECIMAL(6,0) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Sucursal(sucursal_id),
 	rango_id DECIMAL(2,0) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Rango_Etario(rango_id),
-    cliente_id VARCHAR(50) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Cliente(cliente_id),
+	ubicacion_id VARCHAR(110) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Ubicacion(ubicacion_id),
     costo_envio_total DECIMAL(12,2),
     cantidad_envios INT,
     envios_cumplidos INT,
-    PRIMARY KEY (tiempo_id, sucursal_id, rango_id, cliente_id)
+    PRIMARY KEY (tiempo_id, sucursal_id, rango_id, ubicacion_id)
 );
 
 -- Poblar las dimensiones
@@ -149,30 +128,12 @@ SELECT DISTINCT
     l.loca_nombre
 FROM MASTER_COOKS.Localidad l;
 
--- Poblar Dim_Cliente
-INSERT INTO MASTER_COOKS.BI_Dim_Cliente (cliente_id, cliente_ubicacion, cliente_rango_etario)
-SELECT DISTINCT
-    CONCAT(c.clie_documento, c.clie_apellido),
-	CONCAT(c.clie_provincia_id, c.clie_localidad_id),
-	dbo.ExtractRangoEtario(c.clie_fecha_nacimiento, t.tick_fecha_hora)
-FROM MASTER_COOKS.Cliente c
-JOIN MASTER_COOKS.Ticket t ON t.tick_cliente_documento = c.clie_documento and t.tick_cliente_apellido = c.clie_apellido;
-
 -- Poblar Dim_Sucursal
 INSERT INTO MASTER_COOKS.BI_Dim_Sucursal (sucursal_id, sucursal_ubicacion)
 SELECT DISTINCT
     s.sucu_numero,
     CONCAT(s.sucu_provincia_id, s.sucu_localidad_id)
 FROM MASTER_COOKS.Sucursal s;
-
--- Poblar Dim_Empleado
-INSERT INTO MASTER_COOKS.BI_Dim_Empleado (empleado_id, empleado_rango_etario, empleado_sucursal)
-SELECT DISTINCT
-    e.empl_legajo,
-	dbo.ExtractRangoEtario(e.empl_fecha_nacimiento, t.tick_fecha_hora),
-	e.empl_sucursal_id
-FROM MASTER_COOKS.Empleado e
-JOIN MASTER_COOKS.Ticket t ON t.tick_vendedor_id = e.empl_legajo
 
 -- Poblar Dim_Turno
 INSERT INTO MASTER_COOKS.BI_Dim_Turno (turno_id ,turno_hora_inicio, turno_hora_fin)
@@ -205,37 +166,35 @@ SELECT DISTINCT
 FROM MASTER_COOKS.Tipo_Caja tc
 
 --Poblar Fact_Ventas
-INSERT INTO MASTER_COOKS.BI_Fact_Ventas (tiempo_id, sucursal_id, cliente_id, empleado_id, turno_id, tipo_caja_id, importe_total, cantidad_ventas, cantidad_unidades)
+INSERT INTO MASTER_COOKS.BI_Fact_Ventas (tiempo_id, sucursal_id, rango_id, turno_id, tipo_caja_id, ubicacion_id, importe_total, cantidad_ventas, cantidad_unidades)
 SELECT DISTINCT
     dti.tiempo_id,
     dsu.sucursal_id,
-	dcl.cliente_id,
-	dem.empleado_id,
+	dra.rango_id,
     dtu.turno_id,
     dtc.tipo_caja_id,
+	du.ubicacion_id,
     SUM(t.tick_total),
 	COUNT(DISTINCT CONCAT(t.tick_numero,t.tick_sucursal_id,t.tick_tipo)),
     SUM(it.item_cantidad)
 FROM MASTER_COOKS.Ticket t
 JOIN MASTER_COOKS.BI_Dim_Tiempo dti ON dti.tiempo_id = CONCAT(YEAR(t.tick_fecha_hora), RIGHT('0' + CAST(MONTH(t.tick_fecha_hora) AS VARCHAR(2)), 2))
 JOIN MASTER_COOKS.BI_Dim_Sucursal dsu ON dsu.sucursal_id = t.tick_sucursal_id
-JOIN MASTER_COOKS.BI_Dim_Cliente dcl ON dcl.cliente_id = CONCAT(t.tick_cliente_documento, t.tick_cliente_apellido)
-JOIN MASTER_COOKS.BI_Dim_Empleado dem ON dem.empleado_id = t.tick_vendedor_id
+JOIN MASTER_COOKS.Empleado e ON e.empl_legajo = t.tick_vendedor_id
+JOIN MASTER_COOKS.BI_Dim_Rango_Etario dra ON dra.rango_id = dbo.ExtractRangoEtario(e.empl_fecha_nacimiento, GETDATE())
 JOIN MASTER_COOKS.Item_Ticket it ON t.tick_numero = it.item_ticket_numero AND t.tick_tipo = it.item_tipo_id AND t.tick_sucursal_id = it.item_sucursal_id
 JOIN MASTER_COOKS.Caja caja ON caja.caja_sucursal_id = t.tick_sucursal_id AND t.tick_caja_numero = caja.caja_numero
 JOIN MASTER_COOKS.BI_Dim_Tipo_Caja dtc ON dtc.tipo_caja_id = caja.caja_tipo_id
 LEFT JOIN MASTER_COOKS.BI_Dim_Turno dtu ON dtu.turno_id = dbo.devolverTurno(t.tick_fecha_hora)
-GROUP BY dti.tiempo_id, dsu.sucursal_id, dcl.cliente_id, dem.empleado_id, dtu.turno_id, dtc.tipo_caja_id;
-
+JOIN MASTER_COOKS.BI_Dim_Ubicacion du ON du.ubicacion_id = dsu.sucursal_ubicacion
+GROUP BY dti.tiempo_id, dsu.sucursal_id, dra.rango_id, dtu.turno_id, dtc.tipo_caja_id, du.ubicacion_id;
 
 -- Poblar Fact_Promociones
-INSERT INTO MASTER_COOKS.BI_Fact_Promociones(categoria_id, tiempo_id, monto_descuento_promocion, ticket_total, cantidad_tickets, porcentaje_descuento)
+INSERT INTO MASTER_COOKS.BI_Fact_Promociones(categoria_id, tiempo_id, monto_descuento_promocion, porcentaje_descuento)
 SELECT DISTINCT
 	dcat.categoria_id,
 	dti.tiempo_id,
 	SUM(t.tick_total_descuento_promocion),
-	SUM(it.item_total),
-	COUNT(DISTINCT CONCAT(t.tick_numero,t.tick_sucursal_id,t.tick_tipo)),
 	SUM(pxt.promx_item_promocion_aplicada) * 100 / SUM(it.item_total)
 FROM MASTER_COOKS.Ticket t
 JOIN MASTER_COOKS.Item_Ticket it ON t.tick_numero = it.item_ticket_numero AND t.tick_tipo = it.item_tipo_id AND t.tick_sucursal_id = it.item_sucursal_id
@@ -246,12 +205,11 @@ JOIN MASTER_COOKS.BI_Dim_Tiempo dti ON dti.tiempo_id = CONCAT(YEAR(t.tick_fecha_
 GROUP BY dcat.categoria_id, dti.tiempo_id;
 
 -- Poblar Fact_Pagos
-INSERT INTO MASTER_COOKS.BI_Fact_Pagos (tiempo_id, medio_pago_id, sucursal_id, cliente_id, rango_id, importe_pago_en_cuotas, importe_pago_total, descuento_total)
+INSERT INTO MASTER_COOKS.BI_Fact_Pagos (tiempo_id, medio_pago_id, sucursal_id, rango_id, importe_pago_en_cuotas, importe_pago_total, descuento_total)
 SELECT
 	dti.tiempo_id,
 	p.pago_medio_de_pago_id,
 	dsu.sucursal_id,
-	dcl.cliente_id,
 	dran.rango_id,
 	SUM(dbo.devolverImporteDeCuotas(p.pago_importe, dp.deta_pago_id)),
 	SUM(p.pago_importe),
@@ -260,33 +218,32 @@ FROM MASTER_COOKS.Pago p
 JOIN MASTER_COOKS.BI_Dim_Tiempo dti ON dti.tiempo_id = CONCAT(YEAR(p.pago_fecha), RIGHT('0' + CAST(MONTH(p.pago_fecha) AS VARCHAR(2)), 2))
 JOIN MASTER_COOKS.BI_Dim_Sucursal dsu ON dsu.sucursal_id = p.pago_ticket_sucursal
 JOIN MASTER_COOKS.Ticket t ON t.tick_numero = p.pago_ticket_numero AND t.tick_sucursal_id = p.pago_ticket_sucursal AND t.tick_tipo = p.pago_ticket_tipo
-JOIN MASTER_COOKS.BI_Dim_Cliente dcl ON dcl.cliente_id = CONCAT(t.tick_cliente_documento, t.tick_cliente_apellido)
-JOIN MASTER_COOKS.BI_Dim_Rango_Etario dran ON dran.rango_id = dcl.cliente_rango_etario
+JOIN MASTER_COOKS.Cliente c ON c.clie_documento = t.tick_cliente_documento AND c.clie_apellido = t.tick_cliente_apellido
+JOIN MASTER_COOKS.BI_Dim_Rango_Etario dran ON dran.rango_id = dbo.ExtractRangoEtario(c.clie_fecha_nacimiento, GETDATE())
 LEFT JOIN MASTER_COOKS.Detalle_Pago dp ON dp.deta_pago_id = p.pago_id
 LEFT JOIN MASTER_COOKS.Descuento_Aplicado_Por_MP damp ON damp.descx_pago_id = p.pago_id
-GROUP BY dti.tiempo_id, p.pago_medio_de_pago_id, dsu.sucursal_id, dcl.cliente_id, dran.rango_id
+GROUP BY dti.tiempo_id, p.pago_medio_de_pago_id, dsu.sucursal_id, dran.rango_id
 
 
 -- Poblar Fact_Envio
-INSERT INTO MASTER_COOKS.BI_Fact_Envio (tiempo_id, sucursal_id, rango_id, cliente_id, costo_envio_total, cantidad_envios, envios_cumplidos)
+INSERT INTO MASTER_COOKS.BI_Fact_Envio (tiempo_id, sucursal_id, rango_id, ubicacion_id, costo_envio_total, cantidad_envios, envios_cumplidos)
 SELECT
     dti.tiempo_id,
     dsuc.sucursal_id,
     dran.rango_id,
-	dcl.cliente_id,
+	du.ubicacion_id,
     SUM(e.envi_costo),
     COUNT(distinct e.envi_codigo),
     SUM(CASE WHEN (CAST(e.envi_fecha_hora_entrega AS DATE) <= CAST(e.envi_fecha_programada AS DATE)) THEN 1 END)
 FROM MASTER_COOKS.Envio e
 JOIN MASTER_COOKS.Ticket t ON e.envi_ticket_numero = t.tick_numero AND e.envi_ticket_tipo = t.tick_tipo AND e.envi_ticket_sucursal = t.tick_sucursal_id
 JOIN MASTER_COOKS.BI_Dim_Tiempo dti ON dti.tiempo_id = CONCAT(YEAR(t.tick_fecha_hora), RIGHT('0' + CAST(MONTH(t.tick_fecha_hora) AS VARCHAR(2)), 2))
+JOIN MASTER_COOKS.Cliente c ON c.clie_documento = t.tick_cliente_documento AND c.clie_apellido = t.tick_cliente_apellido
 JOIN MASTER_COOKS.BI_Dim_Sucursal dsuc ON dsuc.sucursal_id = t.tick_sucursal_id
-JOIN MASTER_COOKS.BI_Dim_Cliente dcl ON dcl.cliente_id = CONCAT(t.tick_cliente_documento, t.tick_cliente_apellido)
-JOIN MASTER_COOKS.BI_Dim_Rango_Etario dran ON dran.rango_id = dcl.cliente_rango_etario
-JOIN MASTER_COOKS.BI_Dim_Ubicacion dub ON dub.ubicacion_id = dsuc.sucursal_ubicacion
-GROUP BY dti.tiempo_id, dsuc.sucursal_id, dran.rango_id, dcl.cliente_id
+JOIN MASTER_COOKS.BI_Dim_Ubicacion du ON du.ubicacion_id = CONCAT(c.clie_provincia_id, c.clie_localidad_id)
+JOIN MASTER_COOKS.BI_Dim_Rango_Etario dran ON dran.rango_id = dbo.ExtractRangoEtario(c.clie_fecha_nacimiento, GETDATE())
+GROUP BY dti.tiempo_id, dsuc.sucursal_id, dran.rango_id, du.ubicacion_id
 GO
-
 
 -- Crear vistas
 
@@ -324,7 +281,7 @@ CREATE VIEW MASTER_COOKS.BI_VW_PorcentajeVentasRangoEtarioEmpleado AS
 SELECT
     dt.tiempo_anio,
     dt.tiempo_cuatrimestre,
-    de.empleado_rango_etario AS rango_etario_empleado,
+    dre.rango_descripcion AS rango_etario_empleado,
     dc.tipo_caja_id,
     ROUND(CAST(COUNT(*) AS FLOAT) / 
 		CAST((
@@ -333,9 +290,9 @@ SELECT
 			)AS FLOAT) * 100, 2) AS porcentaje_ventas
 FROM MASTER_COOKS.BI_Fact_Ventas fv
 JOIN MASTER_COOKS.BI_Dim_Tiempo dt ON fv.tiempo_id = dt.tiempo_id
-JOIN MASTER_COOKS.BI_Dim_Empleado de ON de.empleado_id = fv.empleado_id
+JOIN MASTER_COOKS.BI_Dim_Rango_Etario dre ON dre.rango_id = fv.rango_id
 JOIN MASTER_COOKS.BI_Dim_Tipo_Caja dc ON fv.tipo_caja_id = dc.tipo_caja_id
-GROUP BY dt.tiempo_anio, dt.tiempo_cuatrimestre, de.empleado_rango_etario, dc.tipo_caja_id
+GROUP BY dt.tiempo_anio, dt.tiempo_cuatrimestre, dre.rango_descripcion, dc.tipo_caja_id
 GO
 
 -- 4.Cantidad de ventas registradas por turno para cada localidad según el mes de cada año.
@@ -349,9 +306,8 @@ SELECT
 FROM MASTER_COOKS.BI_Fact_Ventas fv
 JOIN MASTER_COOKS.BI_Dim_Tiempo dt ON fv.tiempo_id = dt.tiempo_id
 JOIN MASTER_COOKS.BI_Dim_Turno dtur ON fv.turno_id = dtur.turno_id
-JOIN MASTER_COOKS.BI_Dim_Sucursal ds ON fv.sucursal_id = ds.sucursal_id
-JOIN MASTER_COOKS.BI_Dim_Ubicacion du ON du.ubicacion_id = ds.sucursal_ubicacion
-GROUP BY dt.tiempo_anio, dt.tiempo_mes, dtur.turno_id, du.ubicacion_localidad;
+JOIN MASTER_COOKS.BI_Dim_Ubicacion du ON du.ubicacion_id = fv.ubicacion_id
+GROUP BY du.ubicacion_localidad, dt.tiempo_anio, dt.tiempo_mes, dtur.turno_id;
 GO
 
 -- 5.Porcentaje de descuento aplicados en función del total de los tickets según el mes de cada año.
@@ -400,25 +356,21 @@ SELECT
     sum(fe.cantidad_envios) AS cantidad_envios
 FROM MASTER_COOKS.BI_Fact_Envio fe
 JOIN MASTER_COOKS.BI_Dim_Tiempo dt ON fe.tiempo_id = dt.tiempo_id
-JOIN MASTER_COOKS.BI_Dim_Cliente dc ON fe.cliente_id = dc.cliente_id
-JOIN MASTER_COOKS.BI_Dim_Rango_Etario dre ON dc.cliente_rango_etario = dre.rango_id
+JOIN MASTER_COOKS.BI_Dim_Rango_Etario dre ON fe.rango_id = dre.rango_id
 GROUP BY dt.tiempo_anio, dt.tiempo_cuatrimestre, dre.rango_id;
 GO
 
 -- 9. Las 5 localidades con mayor costo de envío
---ESTA BIEN
 CREATE VIEW MASTER_COOKS.BI_VW_Top5LocalidadesCostoEnvio AS
 SELECT TOP 5
     du.ubicacion_localidad AS Localidad
 	FROM MASTER_COOKS.BI_Fact_Envio env
-JOIN MASTER_COOKS.BI_Dim_Cliente dc on env.cliente_id = dc.cliente_id
-JOIN MASTER_COOKS.BI_Dim_Ubicacion du ON dc.cliente_ubicacion = du.ubicacion_id
+JOIN MASTER_COOKS.BI_Dim_Ubicacion du ON env.ubicacion_id = du.ubicacion_id
 GROUP BY du.ubicacion_localidad
 ORDER BY SUM(env.costo_envio_total) DESC;
 GO
 
 -- 10. Las 3 sucursales con el mayor importe de pagos en cuotas
---CREO QUE VAN SOLO LOS MEDIO DE PAGO ID, LO DEMAS NO SE PIDE
 CREATE VIEW MASTER_COOKS.BI_VW_Top3SucursalesPagosCuotas AS
 SELECT TOP 3
         dt.tiempo_anio,

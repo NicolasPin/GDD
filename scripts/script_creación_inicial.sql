@@ -21,7 +21,7 @@ create table MASTER_COOKS.Supermercado (
 	supe_razon_social varchar(50) null,
 	supe_ing_brutos char(9) null,
 	supe_domicilio varchar(50) null,
-	supe_fecha_ini_actividad date null,
+	supe_fecha_ini_actividad date null, 
 	supe_cond_fiscal varchar(50) null,
     supe_localidad_id varchar(50) null,
     supe_provincia_id varchar(60) null,
