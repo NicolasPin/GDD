@@ -27,20 +27,6 @@ entity BI_Dim_Rango_Etario <<Dimension>> {
     rango_descripcion: varchar(50)
 }
 
-entity BI_Dim_Cliente <<Dimension>> {
-    **PK | cliente_id: varchar(50)**
-    --
-    FK | cliente_ubicacion: varchar(110)
-    FK | cliente_rango_etario: decimal(2,0)
-}
-
-entity BI_Dim_Empleado <<Dimension>> {
-    **PK | empleado_id: varchar(60)**
-    --
-    FK | empleado_rango_etario: decimal(2,0)
-    FK | empleado_sucursal: decimal(6,0)
-}
-
 entity BI_Dim_Turno <<Dimension>> {
     **PK | turno_id: char(12)**
     --
@@ -69,10 +55,10 @@ entity BI_Dim_Tipo_Caja <<Dimension>> {
 entity BI_Fact_Ventas <<Facts>> {
     **PK,FK | tiempo_id: varchar(20)**
     **PK,FK | sucursal_id: decimal(6,0)**
-    **PK,FK | cliente_id: varchar(50)**
-    **PK,FK | empleado_id: varchar(60)**
-    **PK,FK | turno_id: decimal(6,0)**
+    **PK,FK | rango_id: decimal(2,0)**
+    **PK,FK | turno_id: char(12)**
     **PK,FK | tipo_caja_id: varchar(50)**
+    **PK,FK | ubicacion_id: varchar(110)**
     --
     importe_total: decimal(12,2)
     cantidad_ventas: decimal(12,0)
@@ -84,8 +70,6 @@ entity BI_Fact_Promociones <<Facts>> {
     **PK,FK | tiempo_id: varchar(20)**
     --
     monto_descuento_promocion: decimal(18,2)
-    ticket_total: decimal(18,2)
-    cantidad_tickets: decimal(18,0)
     porcentaje_descuento: decimal(5,2)
 }
 
@@ -93,8 +77,7 @@ entity BI_Fact_Pagos <<Facts>> {
     **PK,FK | tiempo_id: varchar(20)**
     **PK,FK | medio_pago_id: varchar(50)**
     **PK,FK | sucursal_id: decimal(6,0)**
-    **PK,FK | cliente_id: varchar(50)**
-    **PK,FK | rango_id: decimal(2,0)**
+    **PK,FK | rango_id decimal(2,0)**
     --
     importe_pago_en_cuotas: decimal(12,2)
     importe_pago_total: decimal(12,2)
@@ -104,8 +87,8 @@ entity BI_Fact_Pagos <<Facts>> {
 entity BI_Fact_Envio <<Facts>> {
     **PK,FK | tiempo_id: varchar(20)**
     **PK,FK | sucursal_id: decimal(6,0)**
-    **PK,FK | cliente_id: varchar(50)**
     **PK,FK | rango_id: decimal(2,0)**
+    **PK,FK | ubicacion_id: varchar(110)**
     --
     costo_envio_total: decimal(12,2)
     cantidad_envios: int
@@ -114,10 +97,10 @@ entity BI_Fact_Envio <<Facts>> {
 
 BI_Dim_Tiempo ||---|{ BI_Fact_Ventas
 BI_Dim_Sucursal ||---|{ BI_Fact_Ventas
-BI_Dim_Cliente ||---|{ BI_Fact_Ventas
-BI_Dim_Empleado ||---|{ BI_Fact_Ventas
+BI_Dim_Rango_Etario ||---|{ BI_Fact_Ventas
 BI_Dim_Turno ||---|{ BI_Fact_Ventas
 BI_Dim_Tipo_Caja ||---|{ BI_Fact_Ventas
+BI_Dim_Ubicacion ||---|{ BI_Fact_Ventas
 
 BI_Dim_Tiempo ||---|{ BI_Fact_Promociones
 BI_Dim_Categoria ||---|{ BI_Fact_Promociones
@@ -125,18 +108,13 @@ BI_Dim_Categoria ||---|{ BI_Fact_Promociones
 BI_Dim_Tiempo ||---|{ BI_Fact_Pagos
 BI_Dim_Medio_Pago ||---|{ BI_Fact_Pagos
 BI_Dim_Sucursal ||---|{ BI_Fact_Pagos
-BI_Dim_Cliente ||---|{ BI_Fact_Pagos
 BI_Dim_Rango_Etario ||---|{ BI_Fact_Pagos
 
 BI_Dim_Tiempo ||---|{ BI_Fact_Envio
 BI_Dim_Sucursal ||---|{ BI_Fact_Envio
-BI_Dim_Cliente ||---|{ BI_Fact_Envio
 BI_Dim_Rango_Etario ||---|{ BI_Fact_Envio
+BI_Dim_Ubicacion ||---|{ BI_Fact_Envio
 
-BI_Dim_Sucursal ||---|{ BI_Dim_Ubicacion
-BI_Dim_Cliente ||----|{ BI_Dim_Ubicacion
-BI_Dim_Empleado ||---|{ BI_Dim_Sucursal
-BI_Dim_Empleado ||--|{ BI_Dim_Rango_Etario
-BI_Dim_Cliente ||---|{ BI_Dim_Rango_Etario
+BI_Dim_Ubicacion ||---|{ BI_Dim_Sucursal
 
 @enduml
