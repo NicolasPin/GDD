@@ -51,7 +51,7 @@ CREATE TABLE MASTER_COOKS.BI_Dim_Tipo_Caja (
     tipo_caja_id VARCHAR(50) PRIMARY KEY
 );
 
--- Tabla de Hechos Ventas (usan tambien ubicacion)
+-- Tabla de Hechos Ventas 
 CREATE TABLE MASTER_COOKS.BI_Fact_Ventas (
     tiempo_id VARCHAR(20) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Tiempo(tiempo_id),
     sucursal_id DECIMAL(6,0) FOREIGN KEY REFERENCES MASTER_COOKS.BI_Dim_Sucursal(sucursal_id),
